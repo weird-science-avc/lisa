@@ -4,8 +4,7 @@ project(weird_science)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
-find_package(catkin REQUIRED COMPONENTS roscpp)
+find_package(catkin REQUIRED COMPONENTS roscpp geometry_msgs message_generation)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -41,11 +40,12 @@ find_package(catkin REQUIRED COMPONENTS roscpp)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+add_message_files(
+  FILES
+  ackermann.msg
 #   Message1.msg
 #   Message2.msg
-# )
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -62,10 +62,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -80,6 +80,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES weird_science
 #  CATKIN_DEPENDS other_catkin_pkg
+  CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 
@@ -99,6 +100,7 @@ catkin_package(
 ## Declare a cpp executable
 # add_executable(weird_science_node src/weird_science_node.cpp)
 add_executable(hello src/hello.cpp)
+add_executable(subpose src/subpose.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -109,6 +111,9 @@ add_executable(hello src/hello.cpp)
 #   ${catkin_LIBRARIES}
 # )
  target_link_libraries(hello
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(subpose
    ${catkin_LIBRARIES}
  )
 

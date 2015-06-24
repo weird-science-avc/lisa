@@ -1,85 +1,105 @@
 #include "ros/ros.h"
-#include "std_msgs/String.h"
+#include "geometry_msgs/Pose2D.h"
+#include "sensor_msgs/Imu.h"
+#include "std_msgs/UInt32.h"
 
-#include <sstream>
+// TODO: Doesn't something define this for us?
+#define PI 3.14159265
+#define WHEEL_ENCODER_M_DISTANCE_FROM_TICKS 0.0544737
 
-/**
- * This tutorial demonstrates simple sending of messages over the ROS system.
- */
+// Global vars for storing wheel encoder and yaw
+float gYaw = 0.0;
+unsigned int gWheelEncoderTicks = 0;
+
+// TODO: Overload equality operator
+bool poseEql(geometry_msgs::Pose2D p1, geometry_msgs::Pose2D p2) {
+  return p1.x != p2.x || p1.y != p2.y || p1.theta != p2.theta;
+}
+
+// Move to utility functions
+float normalizeRadians(float r) {
+  while (r > 2 * PI) { r -= 2 * PI; }
+  while (r < -2 * PI) { r += 2 * PI; }
+  return r;
+}
+
+void imuCallback(const sensor_msgs::Imu& msg) {
+  // Convert quaternion orientation into the yaw we care about
+  // TODO: Consider if we should use a 3D pose instead and just store quaternion
+  gYaw = 0;
+}
+
+void wheelEncoderCallback(const std_msgs::UInt32& wheelEncoder) {
+  gWheelEncoderTicks = wheelEncoder.data;
+}
+
 int main(int argc, char **argv)
 {
-  /**
-   * The ros::init() function needs to see argc and argv so that it can perform
-   * any ROS arguments and name remapping that were provided at the command line.
-   * For programmatic remappings you can use a different version of init() which takes
-   * remappings directly, but for most command-line programs, passing argc and argv is
-   * the easiest way to do it.  The third argument to init() is the name of the node.
-   *
-   * You must call one of the versions of ros::init() before using any other
-   * part of the ROS system.
-   */
-  ros::init(argc, argv, "talker");
-
-  /**
-   * NodeHandle is the main access point to communications with the ROS system.
-   * The first NodeHandle constructed will fully initialize this node, and the last
-   * NodeHandle destructed will close down the node.
-   */
+  ros::init(argc, argv, "localizer");
   ros::NodeHandle n;
+  ros::Publisher pubPose = n.advertise<geometry_msgs::Pose2D>("lisa/pose", 1000);
+  ros::Subscriber subImu = n.subscribe("lisa/sensors/imu", 1, imuCallback);
+  ros::Subscriber subWheelEncoder = n.subscribe("lisa/sensors/wheel_encoder", 1, wheelEncoderCallback);
+  ros::Rate loop_rate(10); // Hz
 
-  /**
-   * The advertise() function is how you tell ROS that you want to
-   * publish on a given topic name. This invokes a call to the ROS
-   * master node, which keeps a registry of who is publishing and who
-   * is subscribing. After this advertise() call is made, the master
-   * node will notify anyone who is trying to subscribe to this topic name,
-   * and they will in turn negotiate a peer-to-peer connection with this
-   * node.  advertise() returns a Publisher object which allows you to
-   * publish messages on that topic through a call to publish().  Once
-   * all copies of the returned Publisher object are destroyed, the topic
-   * will be automatically unadvertised.
-   *
-   * The second parameter to advertise() is the size of the message queue
-   * used for publishing messages.  If messages are published more quickly
-   * than we can send them, the number here specifies how many messages to
-   * buffer up before throwing some away.
-   */
-  ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-
-  ros::Rate loop_rate(10);
-
-  /**
-   * A count of how many messages we have sent. This is used to create
-   * a unique string for each message.
-   */
-  int count = 0;
+  // Track loop states
+  // TODO: Perhaps have nodes that publish wheel encoder and IMU info that we subscribe to
+  float lastYaw = 0.0;
+  int lastWheelEncoderTicks = 0;
+  geometry_msgs::Pose2D pose;
   while (ros::ok())
   {
-    /**
-     * This is a message object. You stuff it with data, and then publish it.
-     */
-    std_msgs::String msg;
+    // Figure out IMU's latest orientation, figure out thetaDelta, and updated stored value
+    // NOTE: IMU has right positive, so do last - now instead of more normal now - last to make left positive again.
+    float yaw = gYaw;
+    float thetaDelta = normalizeRadians((lastYaw - yaw) * PI / 180.0);
+    lastYaw = yaw;
 
-    std::stringstream ss;
-    ss << "hello world " << count;
-    msg.data = ss.str();
+    // Figure out wheel encoder delta, update stored value and calculate distance
+    unsigned int wheelEncoderTicks = gWheelEncoderTicks;
+    unsigned int wheelEncoderDelta = wheelEncoderTicks - lastWheelEncoderTicks;
+    lastWheelEncoderTicks = wheelEncoderTicks;
+    float distance = WHEEL_ENCODER_M_DISTANCE_FROM_TICKS * float(wheelEncoderDelta);
 
-    ROS_INFO("%s", msg.data.c_str());
+    // Figure out position deltas based on straight or banked travel
+    // TODO: Papers seem to indicate we can always do the straight estimate and call it good
+    float xDelta = 0.0;
+    float yDelta = 0.0;
+    if (thetaDelta == 0.0) {
+      //ROS_DEBUG("Straight motion");
+      xDelta = distance * cos(pose.theta);
+      yDelta = distance * sin(pose.theta);
+    } else {
+      //ROS_DEBUG("Banked motion");
+      // Get the turn radius from the distance and angle change
+      float turnRadius = distance / thetaDelta;
+      // Calculate x and y deltas as if we were at (0,0) pointed along x-axis
+      // NOTE: x is 'up' for us, so that's governed by Sin
+      float xDeltaOrigin = turnRadius * sin(thetaDelta);
+      float yDeltaOrigin = turnRadius * (-cos(thetaDelta) + 1.0);
 
-    /**
-     * The publish() function is how you send messages. The parameter
-     * is the message object. The type of this object must agree with the type
-     * given as a template parameter to the advertise<>() call, as was done
-     * in the constructor above.
-     */
-    chatter_pub.publish(msg);
+      // Now we need to rotate those deltas around (0,0) by our current orientation so they're correct
+      float sinR = sin(pose.theta);
+      float cosR = cos(pose.theta);
+      xDelta = xDeltaOrigin * cosR - yDeltaOrigin * sinR;
+      yDelta = xDeltaOrigin * sinR + yDeltaOrigin * cosR;
+    }
+
+    // Update pose
+    geometry_msgs::Pose2D newPose;
+    newPose.x = pose.x + xDelta;
+    newPose.y = pose.y + yDelta;
+    newPose.theta = normalizeRadians(pose.theta + thetaDelta);
+    // Only publish changes
+    if (poseEql(newPose, pose)) {
+      pubPose.publish(newPose);
+      ROS_DEBUG("POSITION: (%.3f,%.3f):%.3f", newPose.x, newPose.y, newPose.theta);
+    }
+    pose = newPose;
 
     ros::spinOnce();
-
     loop_rate.sleep();
-    ++count;
   }
-
 
   return 0;
 }

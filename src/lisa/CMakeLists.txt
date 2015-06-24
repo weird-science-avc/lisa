@@ -7,6 +7,8 @@ project(lisa)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  geometry_msgs
+  sensor_msgs
   std_msgs
 )
 
@@ -117,7 +119,7 @@ include_directories(
 ## LOCALIZER Node
 add_executable(localizer src/localizer.cpp)
 target_link_libraries(localizer ${catkin_LIBRARIES})
-#add_dependencies(localizer lisa_generate_messages_cpp)
+add_dependencies(localizer ${catkin_EXPORTED_TARGETS})
 
 #add_executable(listener src/listener.cpp)
 #target_link_libraries(listener ${catkin_LIBRARIES})

@@ -2,6 +2,7 @@
 #include "geometry_msgs/Pose2D.h"
 #include "sensor_msgs/Imu.h"
 #include "std_msgs/UInt32.h"
+#include "std_srvs/Empty.h"
 
 // TODO: Doesn't something define this for us?
 #define PI 3.14159265
@@ -10,10 +11,11 @@
 // Global vars for storing wheel encoder and yaw
 float gYaw = 0.0;
 unsigned int gWheelEncoderTicks = 0;
+geometry_msgs::Pose2D gPose;
 
 // TODO: Overload equality operator
 bool poseEql(geometry_msgs::Pose2D p1, geometry_msgs::Pose2D p2) {
-  return p1.x != p2.x || p1.y != p2.y || p1.theta != p2.theta;
+  return p1.x == p2.x && p1.y == p2.y && p1.theta == p2.theta;
 }
 
 // Move to utility functions
@@ -21,6 +23,15 @@ float normalizeRadians(float r) {
   while (r > 2 * PI) { r -= 2 * PI; }
   while (r < -2 * PI) { r += 2 * PI; }
   return r;
+}
+
+bool reset(std_srvs::Empty::Request  &req,
+           std_srvs::Empty::Response &res) {
+  gPose.x = 0;
+  gPose.y = 0;
+  gPose.theta = 0;
+  ROS_INFO("POSITION(RESET): (%.3f,%.3f):%.3f", gPose.x, gPose.y, gPose.theta);
+  return true;
 }
 
 void imuCallback(const sensor_msgs::Imu& msg) {
@@ -35,18 +46,20 @@ void wheelEncoderCallback(const std_msgs::UInt32& wheelEncoder) {
 
 int main(int argc, char **argv)
 {
+  ROS_INFO("Starting Localizer");
   ros::init(argc, argv, "localizer");
   ros::NodeHandle n;
   ros::Publisher pubPose = n.advertise<geometry_msgs::Pose2D>("lisa/pose", 1000);
   ros::Subscriber subImu = n.subscribe("lisa/sensors/imu", 1, imuCallback);
   ros::Subscriber subWheelEncoder = n.subscribe("lisa/sensors/wheel_encoder", 1, wheelEncoderCallback);
+  ros::ServiceServer service = n.advertiseService("lisa/localizer/reset", reset);
   ros::Rate loop_rate(10); // Hz
 
   // Track loop states
-  // TODO: Perhaps have nodes that publish wheel encoder and IMU info that we subscribe to
   float lastYaw = 0.0;
   int lastWheelEncoderTicks = 0;
-  geometry_msgs::Pose2D pose;
+  geometry_msgs::Pose2D lastPublishedPose;
+  pubPose.publish(lastPublishedPose);
   while (ros::ok())
   {
     // Figure out IMU's latest orientation, figure out thetaDelta, and updated stored value
@@ -67,8 +80,8 @@ int main(int argc, char **argv)
     float yDelta = 0.0;
     if (thetaDelta == 0.0) {
       //ROS_DEBUG("Straight motion");
-      xDelta = distance * cos(pose.theta);
-      yDelta = distance * sin(pose.theta);
+      xDelta = distance * cos(gPose.theta);
+      yDelta = distance * sin(gPose.theta);
     } else {
       //ROS_DEBUG("Banked motion");
       // Get the turn radius from the distance and angle change
@@ -79,23 +92,24 @@ int main(int argc, char **argv)
       float yDeltaOrigin = turnRadius * (-cos(thetaDelta) + 1.0);
 
       // Now we need to rotate those deltas around (0,0) by our current orientation so they're correct
-      float sinR = sin(pose.theta);
-      float cosR = cos(pose.theta);
+      float sinR = sin(gPose.theta);
+      float cosR = cos(gPose.theta);
       xDelta = xDeltaOrigin * cosR - yDeltaOrigin * sinR;
       yDelta = xDeltaOrigin * sinR + yDeltaOrigin * cosR;
     }
 
-    // Update pose
-    geometry_msgs::Pose2D newPose;
-    newPose.x = pose.x + xDelta;
-    newPose.y = pose.y + yDelta;
-    newPose.theta = normalizeRadians(pose.theta + thetaDelta);
+    // Update gPose
+    geometry_msgs::Pose2D pose;
+    pose.x = gPose.x + xDelta;
+    pose.y = gPose.y + yDelta;
+    pose.theta = normalizeRadians(gPose.theta + thetaDelta);
     // Only publish changes
-    if (poseEql(newPose, pose)) {
-      pubPose.publish(newPose);
-      ROS_DEBUG("POSITION: (%.3f,%.3f):%.3f", newPose.x, newPose.y, newPose.theta);
+    if (!poseEql(pose, lastPublishedPose)) {
+      pubPose.publish(pose);
+      ROS_DEBUG("POSITION: (%.3f,%.3f):%.3f", pose.x, pose.y, pose.theta);
+      lastPublishedPose = pose;
     }
-    pose = newPose;
+    gPose = pose;
 
     ros::spinOnce();
     loop_rate.sleep();

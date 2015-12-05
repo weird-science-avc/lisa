@@ -121,6 +121,11 @@ add_executable(localizer src/localizer.cpp)
 target_link_libraries(localizer ${catkin_LIBRARIES})
 add_dependencies(localizer ${catkin_EXPORTED_TARGETS})
 
+## TELEOP_KEY Node
+add_executable(teleop_key src/teleop_key.cpp)
+target_link_libraries(teleop_key ${catkin_LIBRARIES})
+add_dependencies(teleop_key ${catkin_EXPORTED_TARGETS})
+
 #add_executable(listener src/listener.cpp)
 #target_link_libraries(listener ${catkin_LIBRARIES})
 #add_dependencies(listener beginner_tutorials_generate_messages_cpp)

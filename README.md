@@ -37,6 +37,7 @@ which you can set log levels and view ouptut.
 
 ## Nodes
 
+
 ### Localizer
 ```
 rosrun lisa localizer
@@ -46,24 +47,12 @@ The localizer is responsible for tracing the robots position using
 sensor data.
 
 #### Subscribes
-* `/lisa/sensors/wheel_encoder`
-  Wheel encoder data, always represents the latest. To publish:
-  ```
-  rostopic pub -1 /lisa/sensors/wheel_encoder std_msgs/UInt32 '20'
-  ```
-
-* `/lisa/sensors/imu`
-  IMU data, always represents the latest. To publish:
-  ```
-  rostopic pub -1 /lisa/sensors/imu sensor_msgs/Imu '<todo-figure-out>'
-  ```
+* `/lisa/sensors/wheel_encoder` - Wheel encoder data, always represents latest.
+* `/lisa/sensors/imu` - IMU data, always represents the latest.
 
 #### Publishes
-* `/lisa/pose`
-  The pose (stamped) of the robot, i.e. its position and orientation. To follow:
-  ```
-  rostopic echo /lisa/pose
-  ```
+* `/lisa/pose` - The pose (stamped) of the robot; i.e. its position and orientation.
+
 
 ### Teleoperator (Keyboard)
 ```
@@ -74,12 +63,8 @@ The Teleoperator (Keyboard) listens to the keyboard and publishes Twist
 messages to control the robot.
 
 #### Publishes
-* `/lisa/twist`
-  The Twist message with the target velocities the robot should attempt
-  to achieve.
-  ```
-  rostopic echo /lisa/twist
-  ```
+* `/lisa/twist` - The Twist message with the target velocities.
+
 
 ### IMU Simulator
 ```
@@ -90,19 +75,11 @@ The IMU Simulator listens to Twist messages and generates IMU messages
 according to the target twist message.
 
 #### Subscribes
-* `/lisa/twist`
-  The Twist message with the target velocities the robot should attempt
-  to achieve. To publish:
-  ```
-  rostopic pub -1 /lisa/twist geometry_msgs/Twist '<todo-figure-out>'
-  ```
+* `/lisa/twist` - The Twist message with the target velocities.
 
 #### Publishes
-* `/lisa/sensors/imu`
-  The IMU values. To listen:
-  ```
-  rostopic echo /lisa/sensors/imu
-  ```
+* `/lisa/sensors/imu` - The IMU values.
+
 
 ### Wheel Encoder Simulator
 ```
@@ -113,16 +90,55 @@ The Wheel Encoder Simulator listens to Twist messages and generates
 wheel encoder messages according the target twist message.
 
 #### Subscribes
-* `/lisa/twist`
-  The Twist message with the target velocities the robot should attempt
-  to achieve. To publish:
-  ```
-  rostopic pub -1 /lisa/twist geometry_msgs/Twist '<todo-figure-out>'
-  ```
+* `/lisa/twist` - The Twist message with the target velocities.
 
 #### Publishes
-* `/lisa/sensors/wheel_encoder`
-  The wheel encoder values. To listen:
-  ```
-  rostopic echo /lisa/sensors/wheel_encoder
-  ```
+* `/lisa/sensors/wheel_encoder` - The wheel encoder values.
+
+
+## Debug
+
+To listen to any publshed topic above use `rostopic echo <topic>`; for
+example to listen to pose:
+```
+rostopic echo /lisa/pose
+```
+
+In order to publish fake data on sensors, twist, etc. you can directly publish to the topics using `rostopic pub ...`.
+
+### Wheel Encoder
+```
+rostopic pub -1 /lisa/sensors/wheel_encoder std_msgs/UInt32 '<ticks>'
+```
+The `<ticks>` value should be the wheel encoder ticks value.
+
+### IMU
+```
+rostopic pub -1 /lisa/sensors/imu sensor_msgs/Imu -- '[0, [0,0], "lisa"]' '<orientation>' '<orientation_covariance>' '<angular>' '<angular_covariance>' '<linear>' '<linear_covariance>'
+```
+* `<orientation>` is a quaternion and should be an array of four doubles `[x, y, z, w]`.
+* `<angular>` is a vector3 for angular velocity and array of three doubles `[x, y, z]`.
+* `<linear>` is a vector3 for linear velocity and array of three doubles `[x, y, z]`.
+* `<*_covariance>` is an array of nine doubles; should be all zeros for unknown.
+
+A quaternion can be computed using http://quat.zachbennett.com/; put
+degrees in for `Z` and then `z = <q1>` and `w = <q4>`.
+
+For example for PI/2 (90 deg) rotation:
+```
+rostopic pub -1 /lisa/sensors/imu sensor_msgs/Imu -- '[0, [0,0], "lisa"]' '[0.0, 0.0, 0.707, 0.707]' '[0,0,0,0,0,0,0,0,0]' '[0,0,0]' '[0,0,0,0,0,0,0,0,0]' '[0,0,0]' '[0,0,0,0,0,0,0,0,0]'
+```
+
+### Robot Target Velocities
+```
+rostopic pub -1 /lisa/twist geometry_msgs/Twist -- '<linear>' '<angular>'
+```
+* `<linear>` is a vector3 for linear velocity and array of three doubles
+  `[x, y, z]`; use only `x` for velocity.
+* `<angular>` is a vector3 for angular velocity and array of three
+  doubles `[x, y, z]`; use only `x` for velocity.
+
+For example for 1 m/s straight forward, turning 5 degrees per second:
+```
+rostopic pub -1 /lisa/twist geometry_msgs/Twist -- '[1.0, 0.0, 0.0]' '[0.0872665, 0.0, 0.0]'
+```

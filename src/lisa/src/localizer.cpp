@@ -4,6 +4,7 @@
 #include <std_msgs/UInt64.h>
 #include <std_srvs/Empty.h>
 #include <tf/transform_datatypes.h>
+#include <visualization_msgs/Marker.h>
 
 // TODO: Doesn't something define this for us?
 #define PI 3.14159265
@@ -58,10 +59,12 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "localizer");
   ros::NodeHandle n;
   ros::Publisher pose_pub = n.advertise<geometry_msgs::PoseStamped>("lisa/pose", 1000);
+  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("lisa/path", 10);
+
   ros::Subscriber wheel_encoder_sub = n.subscribe("lisa/sensors/wheel_encoder", 1, wheelEncoderCallback);
   ros::Subscriber imu_sub = n.subscribe("lisa/sensors/imu", 1, imuCallback);
+
   ros::ServiceServer service = n.advertiseService("lisa/localizer/reset", reset);
-  ros::Rate loop_rate(10); // Hz
 
   // Track loop states
   float last_yaw = 0.0;
@@ -70,6 +73,23 @@ int main(int argc, char **argv)
   last_published_pose.header.stamp = ros::Time::now();
   last_published_pose.header.frame_id = "lisa";
   pose_pub.publish(last_published_pose);
+
+  // Setup path tracker
+  visualization_msgs::Marker path_strip;
+  path_strip.header.frame_id = "lisa";
+  path_strip.ns = "path";
+  path_strip.id = 0;
+  path_strip.type = visualization_msgs::Marker::LINE_STRIP;
+  path_strip.action = visualization_msgs::Marker::ADD;
+  path_strip.pose.position = last_published_pose.pose.position;
+  path_strip.pose.orientation.w = 1.0;
+  path_strip.scale.x = 0.1;
+  path_strip.scale.y = 0.1;
+  path_strip.scale.z = 0.1;
+  path_strip.color.a = 1.0;
+  path_strip.color.b = 1.0;
+
+  ros::Rate loop_rate(10); // Hz
   while (ros::ok())
   {
     // Figure out IMU's latest orientation, figure out theta_delta, and updated stored value
@@ -107,25 +127,38 @@ int main(int argc, char **argv)
     }
 
     // Update g_pose
-    geometry_msgs::PoseStamped pose;
-    pose.pose.position.x = g_pose.pose.position.x + x_delta;
-    pose.pose.position.y = g_pose.pose.position.y + y_delta;
-    pose.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+    geometry_msgs::PoseStamped pose_stamped;
+    pose_stamped.pose.position.x = g_pose.pose.position.x + x_delta;
+    pose_stamped.pose.position.y = g_pose.pose.position.y + y_delta;
+    pose_stamped.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
 
     // Save loop variables
     last_wheel_encoder_ticks = wheel_encoder_ticks;
     last_yaw = yaw;
 
     // Only publish changes
-    if (!poseEql(pose, last_published_pose)) {
-      pose.header.seq = last_published_pose.header.seq + 1;
-      pose.header.stamp = ros::Time::now();
-      pose.header.frame_id = "lisa";
-      pose_pub.publish(pose);
-      ROS_DEBUG("POSITION: (%.3f,%.3f):%.3f", pose.pose.position.x, pose.pose.position.y, yaw);
-      last_published_pose = pose;
+    if (!poseEql(pose_stamped, last_published_pose)) {
+      // Stamp the pose
+      pose_stamped.header.seq = last_published_pose.header.seq + 1;
+      pose_stamped.header.stamp = ros::Time::now();
+      pose_stamped.header.frame_id = "lisa";
+
+      // Update the path
+      path_strip.header.stamp = ros::Time::now();
+      path_strip.points.push_back(pose_stamped.pose.position);
+
+      // Publish the pose and path
+      pose_pub.publish(pose_stamped);
+      marker_pub.publish(path_strip);
+      ROS_DEBUG("POSITION: (%.3f,%.3f):%.3f",
+          pose_stamped.pose.position.x,
+          pose_stamped.pose.position.y,
+          yaw);
+
+      // Save loop var
+      last_published_pose = pose_stamped;
     }
-    g_pose = pose;
+    g_pose = pose_stamped;
 
     ros::spinOnce();
     loop_rate.sleep();

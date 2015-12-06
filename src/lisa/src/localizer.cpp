@@ -138,6 +138,12 @@ int main(int argc, char **argv)
 
     // Only publish changes
     if (!poseEql(pose_stamped, last_published_pose)) {
+      ROS_DEBUG("QUATERNION: (%0.3f,%0.3f,%0.3f,%0.3f)",
+          pose_stamped.pose.orientation.x,
+          pose_stamped.pose.orientation.y,
+          pose_stamped.pose.orientation.z,
+          pose_stamped.pose.orientation.w
+          );
       // Stamp the pose
       pose_stamped.header.seq = last_published_pose.header.seq + 1;
       pose_stamped.header.stamp = ros::Time::now();

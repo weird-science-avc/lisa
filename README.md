@@ -46,16 +46,21 @@ The localizer is responsible for tracing the robots position using
 sensor data.
 
 #### Subscribes
-* `/lisa/sensors/odometry`
-  Any sensor data bundled that helps us know the odometry, i.e. wheel
-  encoder and IMU. To publish:
+* `/lisa/sensors/wheel_encoder`
+  Wheel encoder data, always represents the latest. To publish:
   ```
-  rostopic pub -1 /lisa/sensors/odemetry <todo-figure-out>
+  rostopic pub -1 /lisa/sensors/wheel_encoder std_msgs/UInt32 '20'
+  ```
+
+* `/lisa/sensors/imu`
+  IMU data, always represents the latest. To publish:
+  ```
+  rostopic pub -1 /lisa/sensors/imu sensor_msgs/Imu '<todo-figure-out>'
   ```
 
 #### Publishes
 * `/lisa/pose`
-  The pose of the robot, i.e. its position and orientation. To follow:
+  The pose (stamped) of the robot, i.e. its position and orientation. To follow:
   ```
   rostopic echo /lisa/pose
   ```
@@ -76,25 +81,48 @@ messages to control the robot.
   rostopic echo /lisa/twist
   ```
 
-### Sensor Simulator
+### IMU Simulator
 ```
-rosrun lisa sensor_simulator
+rosrun lisa imu_simulator
 ```
 
-The Sensor Simulator listens to Twist messages and generates wheel
-encoder and IMU messages according the twist message.
+The IMU Simulator listens to Twist messages and generates IMU messages
+according to the target twist message.
 
 #### Subscribes
 * `/lisa/twist`
   The Twist message with the target velocities the robot should attempt
-  to achieve.
+  to achieve. To publish:
   ```
-  rostopic pub -1 /lisa/twist <todo-figure-out>
+  rostopic pub -1 /lisa/twist geometry_msgs/Twist '<todo-figure-out>'
   ```
 
 #### Publishes
-* `/lisa/sensors/odometry`
-  The wheel encoder and IMU values.
+* `/lisa/sensors/imu`
+  The IMU values. To listen:
   ```
-  rostopic echo /lisa/sensors/odometry
+  rostopic echo /lisa/sensors/imu
+  ```
+
+### Wheel Encoder Simulator
+```
+rosrun lisa wheel_encoder_simulator
+```
+
+The Wheel Encoder Simulator listens to Twist messages and generates
+wheel encoder messages according the target twist message.
+
+#### Subscribes
+* `/lisa/twist`
+  The Twist message with the target velocities the robot should attempt
+  to achieve. To publish:
+  ```
+  rostopic pub -1 /lisa/twist geometry_msgs/Twist '<todo-figure-out>'
+  ```
+
+#### Publishes
+* `/lisa/sensors/wheel_encoder`
+  The wheel encoder values. To listen:
+  ```
+  rostopic echo /lisa/sensors/wheel_encoder
   ```

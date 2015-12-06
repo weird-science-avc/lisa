@@ -51,7 +51,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  OdometrySensor.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -136,10 +135,14 @@ add_executable(teleop_key src/teleop_key.cpp)
 target_link_libraries(teleop_key ${catkin_LIBRARIES})
 add_dependencies(teleop_key ${catkin_EXPORTED_TARGETS})
 
-## Sensor Simulator Node
-add_executable(sensor_simulator src/sensor_simulator.cpp)
-target_link_libraries(sensor_simulator ${catkin_LIBRARIES})
-add_dependencies(sensor_simulator ${catkin_EXPORTED_TARGETS})
+## Simulator Nodes
+add_executable(imu_simulator src/imu_simulator.cpp)
+target_link_libraries(imu_simulator ${catkin_LIBRARIES})
+add_dependencies(imu_simulator ${catkin_EXPORTED_TARGETS})
+
+add_executable(wheel_encoder_simulator src/wheel_encoder_simulator.cpp)
+target_link_libraries(wheel_encoder_simulator ${catkin_LIBRARIES})
+add_dependencies(wheel_encoder_simulator ${catkin_EXPORTED_TARGETS})
 
 #add_executable(listener src/listener.cpp)
 #target_link_libraries(listener ${catkin_LIBRARIES})

@@ -130,6 +130,11 @@ add_executable(localizer src/localizer.cpp)
 target_link_libraries(localizer ${catkin_LIBRARIES})
 add_dependencies(localizer ${catkin_EXPORTED_TARGETS})
 
+## Waypoint Manager Node
+add_executable(waypoint_manager src/waypoint_manager.cpp)
+target_link_libraries(waypoint_manager ${catkin_LIBRARIES})
+add_dependencies(waypoint_manager ${catkin_EXPORTED_TARGETS})
+
 ## Teleoperator (Keyboard) Node
 add_executable(teleop_key src/teleop_key.cpp)
 target_link_libraries(teleop_key ${catkin_LIBRARIES})

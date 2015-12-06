@@ -17,6 +17,7 @@ unsigned int g_wheel_encoder_ticks = 0;
 
 // Global pose
 geometry_msgs::PoseStamped g_pose;
+int g_pose_index = 0;
 
 void wheelEncoderCallback(const std_msgs::UInt64& msg) {
   g_wheel_encoder_ticks = msg.data;
@@ -29,8 +30,7 @@ void imuCallback(const sensor_msgs::Imu& msg) {
 }
 
 void initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg) {
-  g_pose.header.seq++;
-  g_pose.header.stamp = msg.header.stamp;
+  g_pose.header.seq = ++g_pose_index;
   g_pose.pose = msg.pose.pose;
   g_yaw = tf::getYaw(g_pose.pose.orientation);
   ROS_INFO("POSITION(initial): (%.3f,%.3f):%.3f", g_pose.pose.position.x, g_pose.pose.position.y, g_yaw);
@@ -42,8 +42,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "localizer");
   ros::NodeHandle n;
   ros::Publisher pose_pub = n.advertise<geometry_msgs::PoseStamped>("lisa/pose", 1000);
-  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("lisa/path", 10);
-  tf::TransformBroadcaster pose_broadcaster;
+  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 0);
 
   // Subscribe to sensor updates
   ros::Subscriber wheel_encoder_sub = n.subscribe("lisa/sensors/wheel_encoder", 1, wheelEncoderCallback);
@@ -54,21 +53,19 @@ int main(int argc, char **argv)
 
   // Initialize g_pose and publish
   g_pose.header.frame_id = "lisa";
-  g_pose.header.seq = 0;
-  g_pose.header.stamp = ros::Time::now();
+  g_pose.header.seq = g_pose_index;
+  g_pose.header.stamp = ros::Time();
   g_pose.pose.position.x = 0.0;
   g_pose.pose.position.y = 0.0;
   g_pose.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
   pose_pub.publish(g_pose);
   ROS_DEBUG("POSITION(start): (0.000,0.000):0.000");
 
-  // Track loop states
-  float last_yaw = 0.0;
-  int last_wheel_encoder_ticks = 0;
-
-  // Setup path tracker
+  // Initialize path tracker and publish
   visualization_msgs::Marker path_strip;
   path_strip.header.frame_id = "lisa";
+  path_strip.header.seq = g_pose_index;
+  path_strip.header.stamp = ros::Time();
   path_strip.ns = "path";
   path_strip.id = 0;
   path_strip.type = visualization_msgs::Marker::LINE_STRIP;
@@ -79,6 +76,11 @@ int main(int argc, char **argv)
   path_strip.scale.z = 0.1;
   path_strip.color.a = 1.0;
   path_strip.color.b = 1.0;
+  marker_pub.publish(path_strip);
+
+  // Track loop states
+  float last_yaw = 0.0;
+  int last_wheel_encoder_ticks = 0;
 
   ros::Rate loop_rate(10); // Hz
   while (ros::ok())
@@ -120,22 +122,7 @@ int main(int argc, char **argv)
         y_delta = x_delta_origin * sin_r + y_delta_origin * cos_r;
       }
 
-      // Setup the transform to broadcast
-      // TODO: Consider moving into a static transform broadcaster node
-      geometry_msgs::TransformStamped pose_transform;
-      pose_transform.header.stamp = now;
-      pose_transform.header.frame_id = "lisa";
-      pose_transform.child_frame_id = "map";
-      pose_transform.transform.translation.x = 0.0;
-      pose_transform.transform.translation.y = 0.0;
-      pose_transform.transform.translation.z = 0.0;
-      pose_transform.transform.rotation = tf::createQuaternionMsgFromYaw(0.0);
-      pose_broadcaster.sendTransform(pose_transform);
-
       // Update g_pose and publish
-      g_pose.header.stamp = now;
-      g_pose.header.frame_id = "lisa";
-      g_pose.header.seq++;
       g_pose.pose.position.x = g_pose.pose.position.x + x_delta;
       g_pose.pose.position.y = g_pose.pose.position.y + y_delta;
       g_pose.pose.orientation = tf::createQuaternionMsgFromYaw(g_yaw);
@@ -152,7 +139,6 @@ int main(int argc, char **argv)
           g_yaw);
 
       // Update the path and publish
-      path_strip.header.stamp = now;
       path_strip.points.push_back(g_pose.pose.position);
       marker_pub.publish(path_strip);
 

@@ -24,29 +24,77 @@ tools and they'll come up on your host. For example, with OSX you can
 install [XQuartz](http://xquartz.macosforge.org/landing/) and then X
 windows will come back to your host.
 
-## Localizer
-
-The localizer is responsible for tracing the robots position using
-sensor data. To start it after sourcing the `devel/setup.bash` you can
-do (each command in a separate terminal or screen):
-
+### Start roscore and log helpers
 ```
 roscore
 rosrun rqt_console rqt_console
 rosrun rqt_logger_level rqt_logger_level
-rosrun lisa localizer
 ```
 
 The `rqt_console` and `rqt_logger_level` command will popup the GUIs in
-which you can set log levels and view ouptut.  Then you can publish to
-the topics `/lisa/sensors/imu` or `/lisa/sensors/wheel_encoder` to send
-it information which to update the position:
+which you can set log levels and view ouptut.
 
-```
-rostopic pub -1 /lisa/sensors/wheel_encoder std_msgs/UInt32 '20'
-```
-__TODO: Not sure how to publish `sensor_msgs/Imu` yet__
 
-Those may show up on `rqt_console` if you have debug logging
-enabled. Otherwise you can echo the topic `/lisa/pose` to see odometry
-updates.
+## Nodes
+
+### Localizer
+```
+rosrun lisa localizer
+```
+
+The localizer is responsible for tracing the robots position using
+sensor data.
+
+#### Subscribes
+* `/lisa/sensors/odometry`
+  Any sensor data bundled that helps us know the odometry, i.e. wheel
+  encoder and IMU. To publish:
+  ```
+  rostopic pub -1 /lisa/sensors/odemetry <todo-figure-out>
+  ```
+
+#### Publishes
+* `/lisa/pose`
+  The pose of the robot, i.e. its position and orientation. To follow:
+  ```
+  rostopic echo /lisa/pose
+  ```
+
+### Teleoperator (Keyboard)
+```
+rosrun lisa teleop_key
+```
+
+The Teleoperator (Keyboard) listens to the keyboard and publishes Twist
+messages to control the robot.
+
+#### Publishes
+* `/lisa/twist`
+  The Twist message with the target velocities the robot should attempt
+  to achieve.
+  ```
+  rostopic echo /lisa/twist
+  ```
+
+### Sensor Simulator
+```
+rosrun lisa sensor_simulator
+```
+
+The Sensor Simulator listens to Twist messages and generates wheel
+encoder and IMU messages according the twist message.
+
+#### Subscribes
+* `/lisa/twist`
+  The Twist message with the target velocities the robot should attempt
+  to achieve.
+  ```
+  rostopic pub -1 /lisa/twist <todo-figure-out>
+  ```
+
+#### Publishes
+* `/lisa/sensors/odometry`
+  The wheel encoder and IMU values.
+  ```
+  rostopic echo /lisa/sensors/odometry
+  ```

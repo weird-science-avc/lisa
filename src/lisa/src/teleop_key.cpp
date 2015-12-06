@@ -77,8 +77,7 @@ TeleopKey::TeleopKey() {
   node.param("scale_angular", a_scale, a_scale);
   node.param("scale_linear", l_scale, l_scale);
 
-  // TODO: Change to TwistStamped so it has a timestamp and we can post calculate where we are
-  twist_pub = node.advertise<geometry_msgs::Twist>("lisa/teleop/key/twist", 20);
+  twist_pub = node.advertise<geometry_msgs::Twist>("lisa/twist", 1);
 }
 
 void TeleopKey::keyLoop() {
@@ -136,8 +135,7 @@ void TeleopKey::keyLoop() {
 
     // If dirty calculate linear and angular velocity and publish
     if(dirty == true) {
-      ROS_DEBUG("SPEED: %d", speed);
-      ROS_DEBUG("STEERING: %d", steering);
+      ROS_INFO("speed=%d, steering=%d", speed, steering);
       geometry_msgs::Twist twist;
       // Calclate linear and angular velocity
       double linear = speed * MPH_IN_M_S;

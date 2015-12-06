@@ -4,10 +4,12 @@
 
 #define WHEEL_ENCODER_M_DISTANCE_FROM_TICKS 0.0544737
 
-geometry_msgs::Twist twist;
+double g_distance = 0.0;
+unsigned int g_ticks = 0;
+geometry_msgs::Twist g_twist;
 
 void twistCallback(const geometry_msgs::Twist& msg) {
-  twist = msg;
+  g_twist = msg;
 }
 
 int main(int argc, char** argv) {
@@ -17,35 +19,31 @@ int main(int argc, char** argv) {
   ros::Publisher wheel_encoder_pub = n.advertise<std_msgs::UInt64>("lisa/sensors/wheel_encoder", 1);
   ros::Subscriber twist_sub = n.subscribe("lisa/twist", 1, twistCallback);
 
-  // Loop variables to accumulate distance and yaw
-  double distance = 0.0;
-  unsigned int last_ticks = 0;
+  // Initialize time stamp
   ros::Time stamp = ros::Time::now();
 
-  ros::Rate loop_rate(1); // Hz
+  // Loop to publish wheel encoder updates as they should occur
+  ros::Rate loop_rate(10); // Hz
   while (ros::ok())
   {
     ros::Time new_stamp = ros::Time::now();
     double dt = (new_stamp - stamp).toSec();
     stamp = new_stamp;
 
-    // Update exact distance
-    double linear = twist.linear.x;
-    distance += linear * dt;
-
+    // Update distance based on current twist if we have linear velocity
+    double linear = g_twist.linear.x;
+    g_distance += linear * dt;
     // Calculate new IMU ticks (rounded)
-    unsigned int ticks = int(distance / WHEEL_ENCODER_M_DISTANCE_FROM_TICKS);
-    ROS_DEBUG("dt=%0.3f, distance=%0.3f, ticks=%d", dt, distance, ticks);
+    unsigned int ticks = int(g_distance / WHEEL_ENCODER_M_DISTANCE_FROM_TICKS);
 
-    // Report if IMU ticks changed
-    if (ticks > last_ticks) {
-      ROS_INFO("[WHEEL ENCODER SIMULATOR] ticks=%d", ticks);
+    // Report if ticks changed only
+    if (ticks > g_ticks) {
+      g_ticks = ticks;
+
       std_msgs::UInt64 msg;
       msg.data = ticks;
       wheel_encoder_pub.publish(msg);
-
-      // Update loop variable
-      last_ticks = ticks;
+      ROS_INFO("[WHEEL ENCODER SIMULATOR] ticks=%d (dt=%0.3fs, distance=%0.3fm", g_ticks, dt, g_distance);
     }
 
     ros::spinOnce();

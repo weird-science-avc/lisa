@@ -113,12 +113,12 @@ void TeleopKey::keyLoop() {
     switch(c) {
       case KEYCODE_L:
         ROS_DEBUG("LEFT");
-        steering = std::max(-MAX_STEERING, steering - STEP_STEERING);
+        steering = std::min(MAX_STEERING, steering + STEP_STEERING);
         dirty = true;
         break;
       case KEYCODE_R:
         ROS_DEBUG("RIGHT");
-        steering = std::min(MAX_STEERING, steering + STEP_STEERING);
+        steering = std::max(-MAX_STEERING, steering - STEP_STEERING);
         dirty = true;
         break;
       case KEYCODE_U:

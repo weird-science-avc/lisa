@@ -96,6 +96,16 @@ wheel encoder messages according the target twist message.
 * `/lisa/sensors/wheel_encoder` - The wheel encoder values.
 
 
+### Visualizer
+```
+rosrun rviz rviz --display-config default.rviz
+```
+
+This starts rviz with the proscribed configuration. **Changes to the
+running app won't be saved to the config unless you manually save
+them.**
+
+
 ## Debug
 
 To listen to any publshed topic above use `rostopic echo <topic>`; for

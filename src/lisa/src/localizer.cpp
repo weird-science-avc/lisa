@@ -3,6 +3,7 @@
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/UInt64.h>
 #include <std_srvs/Empty.h>
+#include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
 #include <visualization_msgs/Marker.h>
 
@@ -60,11 +61,13 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   ros::Publisher pose_pub = n.advertise<geometry_msgs::PoseStamped>("lisa/pose", 1000);
   ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("lisa/path", 10);
+  tf::TransformBroadcaster pose_broadcaster;
 
   ros::Subscriber wheel_encoder_sub = n.subscribe("lisa/sensors/wheel_encoder", 1, wheelEncoderCallback);
   ros::Subscriber imu_sub = n.subscribe("lisa/sensors/imu", 1, imuCallback);
 
   ros::ServiceServer service = n.advertiseService("lisa/localizer/reset", reset);
+
 
   // Track loop states
   float last_yaw = 0.0;
@@ -92,6 +95,8 @@ int main(int argc, char **argv)
   ros::Rate loop_rate(10); // Hz
   while (ros::ok())
   {
+    ros::Time now = ros::Time::now();
+
     // Figure out IMU's latest orientation, figure out theta_delta, and updated stored value
     // NOTE: IMU has right positive, so do last - now instead of more normal now - last to make left positive again.
     float yaw = g_yaw;
@@ -144,13 +149,25 @@ int main(int argc, char **argv)
           pose_stamped.pose.orientation.z,
           pose_stamped.pose.orientation.w
           );
+
+      // Setup the transform to broadcast
+      geometry_msgs::TransformStamped pose_transform;
+      pose_transform.header.stamp = now;
+      pose_transform.header.frame_id = "lisa";
+      pose_transform.child_frame_id = "map";
+      pose_transform.transform.translation.x = 0.0;
+      pose_transform.transform.translation.y = 0.0;
+      pose_transform.transform.translation.z = 0.0;
+      pose_transform.transform.rotation = tf::createQuaternionMsgFromYaw(0.0);
+      pose_broadcaster.sendTransform(pose_transform);
+
       // Stamp the pose
-      pose_stamped.header.seq = last_published_pose.header.seq + 1;
-      pose_stamped.header.stamp = ros::Time::now();
+      pose_stamped.header.stamp = now;
       pose_stamped.header.frame_id = "lisa";
+      pose_stamped.header.seq = last_published_pose.header.seq + 1;
 
       // Update the path
-      path_strip.header.stamp = ros::Time::now();
+      path_strip.header.stamp = now;
       path_strip.points.push_back(pose_stamped.pose.position);
 
       // Publish the pose and path

@@ -1,0 +1,5 @@
+<launch>
+  <node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 'map' 'lisa' 100" />
+  <node name="localizer" pkg="lisa" type="localizer" />
+  <node name="waypoint_manager" pkg="lisa" type="waypoint_manager" />
+</launch>

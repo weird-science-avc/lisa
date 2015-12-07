@@ -17,7 +17,7 @@
 #define STEP_SPEED 1
 #define MAX_SPEED 20
 
-// Steering (degrees) [0,10
+// Steering (degrees) [0,10]
 #define STEP_STEERING 1
 #define MAX_STEERING 10
 

@@ -1,3 +1,4 @@
+#include <angles/angles.h>
 #include <ros/ros.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Twist.h>
@@ -16,6 +17,7 @@ void twistCallback(const geometry_msgs::Twist& msg) {
 
 void initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg) {
   g_yaw = tf::getYaw(msg.pose.pose.orientation);
+  ROS_INFO("[IMU SIMULATOR] yaw(initialpose)=%0.3f", g_yaw);
 }
 
 
@@ -45,7 +47,7 @@ int main(int argc, char** argv) {
     double angular = g_twist.angular.x;
     ROS_DEBUG("[IMU SIMULATOR] angular=%0.3f (dt=%0.3fs)", angular, dt);
     if (angular != 0.0) {
-      g_yaw = std::fmod(g_yaw + angular * dt, 2*PI);
+      g_yaw = angles::normalize_angle_positive(g_yaw + angular * dt);
 
       sensor_msgs::Imu msg;
       msg.orientation = tf::createQuaternionMsgFromYaw(g_yaw);

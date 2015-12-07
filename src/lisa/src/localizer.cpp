@@ -55,8 +55,8 @@ int main(int argc, char **argv) {
   ros::NodeHandle n;
 
   // Setup publishers:
-  g_pose_pub = n.advertise<geometry_msgs::PoseStamped>("lisa/pose", 1000);
-  g_marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 0);
+  g_pose_pub = n.advertise<geometry_msgs::PoseStamped>("lisa/pose", 1, true);
+  g_marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
 
   // Setup subscribers:
   // - /lisa/sensors/wheel_encoder - Wheel Encoder data

@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
       std_msgs::UInt64 msg;
       msg.data = ticks;
       wheel_encoder_pub.publish(msg);
-      ROS_INFO("[WHEEL ENCODER SIMULATOR] ticks=%d (dt=%0.3fs, distance=%0.3fm", g_ticks, dt, g_distance);
+      ROS_INFO("[WHEEL ENCODER SIMULATOR] ticks=%d (dt=%0.3fs, d=%0.3fm)", g_ticks, dt, g_distance);
     }
 
     ros::spinOnce();

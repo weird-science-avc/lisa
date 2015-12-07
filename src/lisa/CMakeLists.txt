@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
 
+  angles
   geometry_msgs
   message_generation
   sensor_msgs
@@ -49,9 +50,9 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-)
+#add_message_files(
+#  FILES
+#)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -68,10 +69,10 @@ add_message_files(
 # )
 
 # Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
+#generate_messages(
+#  DEPENDENCIES
+#  std_msgs
+#)
 
 ###################################
 ## catkin specific configuration ##
@@ -129,6 +130,11 @@ include_directories(
 add_executable(localizer src/localizer.cpp)
 target_link_libraries(localizer ${catkin_LIBRARIES})
 add_dependencies(localizer ${catkin_EXPORTED_TARGETS})
+
+## Navigator Node
+add_executable(navigator src/navigator.cpp)
+target_link_libraries(navigator ${catkin_LIBRARIES})
+add_dependencies(navigator ${catkin_EXPORTED_TARGETS})
 
 ## Waypoint Manager Node
 add_executable(waypoint_manager src/waypoint_manager.cpp)

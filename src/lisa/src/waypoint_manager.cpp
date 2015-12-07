@@ -79,9 +79,9 @@ bool clear(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
   return clear_();
 }
 
-bool start_() {
+bool restart_() {
   if (g_goals_length == 0) {
-    ROS_ERROR("cannot start waypoint management, no waypoints defined");
+    ROS_ERROR("cannot restart waypoint management, no waypoints defined");
     return false;
   }
   g_goals_index = 0;
@@ -94,12 +94,14 @@ bool start_() {
   pose_stamped.header.stamp = ros::Time::now();
   pose_stamped.pose = goal;
   g_goal_pub.publish(pose_stamped);
-  ROS_INFO("START WAYPOINT 0: (%0.3f,%0.3f)", goal.position.x, goal.position.y);
   return true;
 }
 
-bool start(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
-  return start_();
+bool restart(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+  bool result = restart_();
+  geometry_msgs::Pose goal = g_goals[g_goals_index];
+  ROS_INFO("RESTART WAYPOINT 0: (%0.3f,%0.3f)", goal.position.x, goal.position.y);
+  return result;
 }
 
 void goalCallback(const geometry_msgs::PoseStamped& msg) {
@@ -110,16 +112,17 @@ void goalCallback(const geometry_msgs::PoseStamped& msg) {
 
   // Save goal
   int index = g_goals_length++;
-  g_goals[index] = msg.pose;
+  geometry_msgs::Pose goal = g_goals[index] = msg.pose;
 
   // Publish an updated marker
   visualization_msgs::Marker marker = createMarker();
   g_marker_pub.publish(marker);
-  ROS_INFO("ADDED WAYPOINT %d: (%0.3f,%0.3f)", index, msg.pose.position.x, msg.pose.position.y);
+  ROS_INFO("ADDED WAYPOINT %d: (%0.3f,%0.3f)", index, goal.position.x, goal.position.y);
 
   // And if its our first auto-start
   if (index == 0) {
-    start_();
+    restart_();
+    ROS_INFO("AUTOSTART WAYPOINT 0: (%0.3f,%0.3f)", goal.position.x, goal.position.y);
   }
 }
 
@@ -222,7 +225,7 @@ int main(int argc, char **argv)
 
   // Setup services:
   ros::ServiceServer clear_service = n.advertiseService("/waypoint_manager/clear", clear);
-  ros::ServiceServer start_service = n.advertiseService("/waypoint_manager/start", start);
+  ros::ServiceServer start_service = n.advertiseService("/waypoint_manager/restart", restart);
 
   // Clear on start
   clear_();

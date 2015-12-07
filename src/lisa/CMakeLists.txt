@@ -7,9 +7,12 @@ project(lisa)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+
   geometry_msgs
+  message_generation
   sensor_msgs
   std_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -46,11 +49,9 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -66,11 +67,11 @@ find_package(catkin REQUIRED COMPONENTS
 #   Action2.action
 # )
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+# Generate added messages and services with any dependencies listed here
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -85,6 +86,14 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES lisa
 #  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS
+    roscpp
+    rospy
+
+    geometry_msgs
+    message_runtime
+    std_msgs
+    tf
 #  DEPENDS system_lib
 )
 
@@ -116,10 +125,24 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
-## LOCALIZER Node
+## Localizer Node
 add_executable(localizer src/localizer.cpp)
 target_link_libraries(localizer ${catkin_LIBRARIES})
 add_dependencies(localizer ${catkin_EXPORTED_TARGETS})
+
+## Teleoperator (Keyboard) Node
+add_executable(teleop_key src/teleop_key.cpp)
+target_link_libraries(teleop_key ${catkin_LIBRARIES})
+add_dependencies(teleop_key ${catkin_EXPORTED_TARGETS})
+
+## Simulator Nodes
+add_executable(imu_simulator src/imu_simulator.cpp)
+target_link_libraries(imu_simulator ${catkin_LIBRARIES})
+add_dependencies(imu_simulator ${catkin_EXPORTED_TARGETS})
+
+add_executable(wheel_encoder_simulator src/wheel_encoder_simulator.cpp)
+target_link_libraries(wheel_encoder_simulator ${catkin_LIBRARIES})
+add_dependencies(wheel_encoder_simulator ${catkin_EXPORTED_TARGETS})
 
 #add_executable(listener src/listener.cpp)
 #target_link_libraries(listener ${catkin_LIBRARIES})

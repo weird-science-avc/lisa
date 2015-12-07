@@ -12,15 +12,12 @@
 
 #define APPROACH_DELTA 1.0 // m
 
-//#define LOW_VELOCITY 1.0 // m/s
-//#define HIGH_VELOCITY 3.5 // m/s
-#define LOW_VELOCITY 0.25 // m/s
-#define HIGH_VELOCITY 1.00 // m/s
+#define LOW_VELOCITY 1.0 // m/s
+#define HIGH_VELOCITY 3.5 // m/s
 
 // angular = linear * yaw_delta * kAngularScale
 #define HIGH_ANGULAR PI // rads/s
-//const double kAngularScale = HIGH_ANGULAR / HIGH_VELOCITY / PI;
-const double kAngularScale = HIGH_ANGULAR / HIGH_VELOCITY / PI / 5.0;
+const double kAngularScale = HIGH_ANGULAR / HIGH_VELOCITY / PI;
 
 geometry_msgs::Pose g_pose, g_goal;
 bool g_started;

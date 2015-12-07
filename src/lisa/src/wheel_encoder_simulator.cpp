@@ -14,6 +14,7 @@ void twistCallback(const geometry_msgs::Twist& msg) {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "wheel_encoder_simulator");
+  ROS_INFO("wheel_encoder_simulator started");
   ros::NodeHandle n;
 
   ros::Publisher wheel_encoder_pub = n.advertise<std_msgs::UInt64>("lisa/sensors/wheel_encoder", 1);

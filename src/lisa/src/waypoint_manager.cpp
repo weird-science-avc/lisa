@@ -4,33 +4,73 @@
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/Marker.h>
 
+#define TOLERANCE 0.5
+
 ros::Publisher g_marker_pub;
 ros::Publisher g_goal_pub;
 
 #define MAX_GOALS 10
 geometry_msgs::Pose g_goals[MAX_GOALS];
+int g_goal_statuses[MAX_GOALS]; // 0=NOT_REACHED, 1=REACHED, 2=REACHED_PROMOTION
 int g_goals_index = 0;
 int g_goals_length = 0;
 
+visualization_msgs::Marker createMarker() {
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "lisa";
+  marker.header.stamp = ros::Time();
+
+  marker.ns = "waypoints";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  marker.action = visualization_msgs::Marker::ADD;
+
+  marker.scale.x = TOLERANCE;
+  marker.scale.y = TOLERANCE;
+  marker.scale.z = TOLERANCE;
+
+  marker.color.a = 1.0;
+  marker.color.r = 1.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+
+  for (int i = 0; i < g_goals_length; i++) {
+    marker.points.push_back(g_goals[i].position);
+    std_msgs::ColorRGBA color;
+    color.a = 1.0;
+    switch(g_goal_statuses[i]) {
+      case 2:
+        color.r = 0.5;
+        color.g = 0.5;
+        color.b = 0.0;
+        break;
+      case 1:
+        color.r = 0.0;
+        color.g = 1.0;
+        color.b = 0.0;
+        break;
+      default:
+        color.r = 1.0;
+        color.g = 1.0;
+        color.b = 0.0;
+        break;
+    }
+    marker.colors.push_back(color);
+  }
+
+  return marker;
+}
+
 // TODO: Consider using Marker::POINTS for the waypoints instead, maybe easier
 // to manage and clear?
+      //path_strip.points.push_back(g_pose.pose.position);
 
 bool clear_() {
   g_goals_length = g_goals_index = 0;
-  // Remove all the markers
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "lisa";
-  marker.header.stamp = ros::Time(); // 0 so it persists
 
-  marker.ns = "waypoints";
-  //marker.id = index;
-  marker.type = visualization_msgs::Marker::CUBE;
-  marker.action = visualization_msgs::Marker::DELETE;
-
-  for (int i = 0; i < MAX_GOALS; i++) {
-    marker.id = i;
-    g_marker_pub.publish(marker);
-  }
+  // Publish an updated marker
+  visualization_msgs::Marker marker = createMarker();
+  g_marker_pub.publish(marker);
 
   return true;
 }
@@ -72,24 +112,8 @@ void goalCallback(const geometry_msgs::PoseStamped& msg) {
   int index = g_goals_length++;
   g_goals[index] = msg.pose;
 
-  // Publish marker for it
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "lisa";
-  marker.header.stamp = ros::Time(); // 0 so it persists
-
-  marker.ns = "waypoints";
-  marker.id = index;
-  marker.type = visualization_msgs::Marker::CUBE;
-  marker.action = visualization_msgs::Marker::ADD;
-
-  marker.pose = msg.pose;
-  marker.scale.x = 0.5;
-  marker.scale.y = 0.5;
-  marker.scale.z = 0.5;
-
-  marker.color.a = 1.0;
-  marker.color.g = 1.0;
-
+  // Publish an updated marker
+  visualization_msgs::Marker marker = createMarker();
   g_marker_pub.publish(marker);
   ROS_INFO("ADDED WAYPOINT %d: (%0.3f,%0.3f)", index, msg.pose.position.x, msg.pose.position.y);
 
@@ -103,6 +127,7 @@ void poseCallback(const geometry_msgs::PoseStamped& msg) {
   geometry_msgs::Pose g0;
   geometry_msgs::Vector3 v0;
   double d0;
+  bool dirty;
 
   if (g_goals_length == 0) {
     ROS_DEBUG("no goals defined, skipping waypoint management");
@@ -126,25 +151,26 @@ void poseCallback(const geometry_msgs::PoseStamped& msg) {
   ROS_DEBUG("WAYPOINT %d: d=%0.3fm", g_goals_index, d0);
 
   // decide if we've arrived at it
-  if (d0 < 0.1) { // Arrived at this goal
+  if (d0 < TOLERANCE) { // Arrived at this goal
+    dirty = true;
+    g_goal_statuses[g_goals_index] = 1;
     ROS_INFO("FINISHED WAYPOINT %d: (%0.3f,%0.3f)", g_goals_index, g0.position.x, g0.position.y);
     g_goals_index++;
 
-    // Detect finished
-    if (g_goals_index >= g_goals_length) {
+    // If we have more to do move forward
+    if (g_goals_index < g_goals_length) {
+      // Update to next goal
+      g0 = g_goals[g_goals_index];
+      ROS_INFO("START WAYPOINT %d: (%0.3f,%0.3f)", g_goals_index, g0.position.x, g0.position.y);
+
+      // Recalculate math
+      v0.x = g0.position.x - msg.pose.position.x;
+      v0.y = g0.position.y - msg.pose.position.y;
+      v0.z = g0.position.z - msg.pose.position.z;
+      d0= std::sqrt(std::pow(v0.x, 2.0) + std::pow(v0.y, 2.0) + std::pow(v0.z, 2.0));
+    } else { // Finished
       ROS_INFO("FINISHED ALL WAYPOINTS");
-      return;
     }
-
-    // Update to next goal
-    g0 = g_goals[g_goals_index];
-    ROS_INFO("START WAYPOINT %d: (%0.3f,%0.3f)", g_goals_index, g0.position.x, g0.position.y);
-
-    // Recalculate math
-    v0.x = g0.position.x - msg.pose.position.x;
-    v0.y = g0.position.y - msg.pose.position.y;
-    v0.z = g0.position.z - msg.pose.position.z;
-    d0= std::sqrt(std::pow(v0.x, 2.0) + std::pow(v0.y, 2.0) + std::pow(v0.z, 2.0));
   }
 
   // try to promote to next waypoint if we're closer to it than current
@@ -160,10 +186,18 @@ void poseCallback(const geometry_msgs::PoseStamped& msg) {
     v1.z = g1.position.z - msg.pose.position.z;
     d1 = std::sqrt(std::pow(v1.x, 2.0) + std::pow(v1.y, 2.0) + std::pow(v1.z, 2.0));
     if (d1 < d0) { // pose -> g1 smaller than pose -> g0, promote
+      dirty = true;
+      g_goal_statuses[g_goals_index] = 2;
       ROS_INFO("FINISHED WAYPOINT %d (PROMOTION): (%0.3f,%0.3f)", g_goals_index, g1.position.x, g1.position.y);
       g_goals_index++;
       ROS_INFO("START WAYPOINT %d: (%0.3f,%0.3f)", g_goals_index, g1.position.x, g1.position.y);
     }
+  }
+
+  if (dirty) {
+    // Publish an updated marker
+    visualization_msgs::Marker marker = createMarker();
+    g_marker_pub.publish(marker);
   }
 }
 
@@ -196,22 +230,3 @@ int main(int argc, char **argv)
   ros::spin();
   return 0;
 }
-
-//const float M_FT = 1.0 / 3.28;
-//
-//// *** DEFINE COURSE HERE ***
-//const long EMERGENCY_TIMEOUT_MS = 2 * 60 * 1000;
-//Waypoint waypoints[] = {
-//  // Sparkfun AVC 2015
-//  Waypoint{56.0 * M_FT, 0            , 5.0 * M_FT},   //Corner 1
-//  //Waypoint{65.0 * M_FT, -142.5 * M_FT, 5.0 * M_FT},
-//  Waypoint{70.0 * M_FT, -285.0 * M_FT, 5.0 * M_FT},   //Corner 2
-////  Waypoint{10.0 * M_FT, -298.0 * M_FT, 5.0 * M_FT},  //          -8 drift y
-//  Waypoint{-70.0 * M_FT, -303.0 * M_FT, 5.0 * M_FT}, // Corner 3 -8 drift y
-//  //Waypoint{-69.0 * M_FT, -158.5 * M_FT, 5.0 * M_FT},
-//  Waypoint{-78.0 * M_FT, -21.0 * M_FT, 5.0 * M_FT},    // Corner 4
-//  Waypoint{10.0 * M_FT, -14.0 * M_FT, 5.0 * M_FT},
-//  geometry_msgs::Point waypoints[] = {
-//  geometry_msgs::Point(10.0, 0.0, 0.0)
-//};
-

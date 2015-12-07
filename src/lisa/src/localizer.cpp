@@ -15,8 +15,11 @@
 float g_yaw = 0.0;
 unsigned int g_wheel_encoder_ticks = 0;
 
-// Global pose
+// Global pose and path
+ros::Publisher g_pose_pub;
+ros::Publisher g_marker_pub;
 geometry_msgs::PoseStamped g_pose;
+visualization_msgs::Marker g_path;
 int g_pose_index = 0;
 
 void wheelEncoderCallback(const std_msgs::UInt64& msg) {
@@ -30,25 +33,37 @@ void imuCallback(const sensor_msgs::Imu& msg) {
 }
 
 void initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg) {
-  g_pose.header.seq = ++g_pose_index;
+  //g_pose_index++;
+
+  // Set pose and path
+  g_pose.header.seq = g_pose_index;
   g_pose.pose = msg.pose.pose;
+  g_pose_pub.publish(g_pose);
+
+  g_path.header.seq = g_pose_index;
+  g_path.points.clear();
+  g_marker_pub.publish(g_path);
+
   g_yaw = tf::getYaw(g_pose.pose.orientation);
   ROS_INFO("POSITION(initial): (%.3f,%.3f):%.3f", g_pose.pose.position.x, g_pose.pose.position.y, g_yaw);
 }
 
 // TODO: Make a Localizer class to track state, see teleop_key.cpp for example.
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   ros::init(argc, argv, "localizer");
+  ROS_INFO("localizer started");
   ros::NodeHandle n;
-  ros::Publisher pose_pub = n.advertise<geometry_msgs::PoseStamped>("lisa/pose", 1000);
-  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 0);
 
-  // Subscribe to sensor updates
+  // Setup publishers:
+  g_pose_pub = n.advertise<geometry_msgs::PoseStamped>("lisa/pose", 1000);
+  g_marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 0);
+
+  // Setup subscribers:
+  // - /lisa/sensors/wheel_encoder - Wheel Encoder data
   ros::Subscriber wheel_encoder_sub = n.subscribe("lisa/sensors/wheel_encoder", 1, wheelEncoderCallback);
+  // - /lisa/sensors/imu - IMU data
   ros::Subscriber imu_sub = n.subscribe("lisa/sensors/imu", 1, imuCallback);
-
-  // Subscribe to /initialpose so we can force the robot's position
+  // - /initialpose - so we can force the robot's position
   ros::Subscriber initalpose_sub = n.subscribe("initialpose", 1, initialposeCallback);
 
   // Initialize g_pose and publish
@@ -58,25 +73,24 @@ int main(int argc, char **argv)
   g_pose.pose.position.x = 0.0;
   g_pose.pose.position.y = 0.0;
   g_pose.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
-  pose_pub.publish(g_pose);
+  g_pose_pub.publish(g_pose);
   ROS_DEBUG("POSITION(start): (0.000,0.000):0.000");
 
-  // Initialize path tracker and publish
-  visualization_msgs::Marker path_strip;
-  path_strip.header.frame_id = "lisa";
-  path_strip.header.seq = g_pose_index;
-  path_strip.header.stamp = ros::Time();
-  path_strip.ns = "path";
-  path_strip.id = 0;
-  path_strip.type = visualization_msgs::Marker::LINE_STRIP;
-  path_strip.action = visualization_msgs::Marker::ADD;
-  path_strip.pose = g_pose.pose;
-  path_strip.scale.x = 0.1;
-  path_strip.scale.y = 0.1;
-  path_strip.scale.z = 0.1;
-  path_strip.color.a = 1.0;
-  path_strip.color.b = 1.0;
-  marker_pub.publish(path_strip);
+  // Initialize g_path and publish
+  g_path.header.frame_id = "lisa";
+  g_path.header.seq = g_pose_index;
+  g_path.header.stamp = ros::Time();
+  g_path.ns = "path";
+  g_path.id = 0;
+  g_path.type = visualization_msgs::Marker::LINE_STRIP;
+  g_path.action = visualization_msgs::Marker::ADD;
+  g_path.scale.x = 0.1;
+  g_path.scale.y = 0.1;
+  g_path.scale.z = 0.1;
+  g_path.color.a = 1.0;
+  g_path.color.b = 1.0;
+  g_path.points.push_back(g_pose.pose.position);
+  g_marker_pub.publish(g_path);
 
   // Track loop states
   float last_yaw = 0.0;
@@ -132,15 +146,15 @@ int main(int argc, char **argv)
           g_pose.pose.orientation.z,
           g_pose.pose.orientation.w
           );
-      pose_pub.publish(g_pose);
+      g_pose_pub.publish(g_pose);
       ROS_DEBUG("POSITION: (%.3f,%.3f):%.3f",
           g_pose.pose.position.x,
           g_pose.pose.position.y,
           g_yaw);
 
       // Update the path and publish
-      path_strip.points.push_back(g_pose.pose.position);
-      marker_pub.publish(path_strip);
+      g_path.points.push_back(g_pose.pose.position);
+      g_marker_pub.publish(g_path);
 
       // Save loop variables
       last_wheel_encoder_ticks = wheel_encoder_ticks;

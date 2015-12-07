@@ -21,6 +21,7 @@ void initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg) {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "imu_simulator");
+  ROS_INFO("imu_simulator started");
   ros::NodeHandle n;
 
   ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("lisa/sensors/imu", 1);

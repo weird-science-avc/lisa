@@ -154,9 +154,9 @@ void poseCallback(const geometry_msgs::PoseStamped& msg) {
   // TODO: Aren't there helpers for constructing the vector and getting distance, etc.?
   v0.x = g0.position.x - msg.pose.position.x;
   v0.y = g0.position.y - msg.pose.position.y;
-  v0.z = g0.position.z - msg.pose.position.z;
-  d0 = std::sqrt(std::pow(v0.x, 2.0) + std::pow(v0.y, 2.0) + std::pow(v0.z, 2.0));
-  ROS_DEBUG("WAYPOINT %d: d=%0.3fm", g_goals_index, d0);
+  d0 = std::sqrt(std::pow(v0.x, 2.0) + std::pow(v0.y, 2.0));
+  ROS_DEBUG("WAYPOINT %d: (%0.3f,%0.3f) -> (%0.3f,%0.3f) = %0.3fm", g_goals_index + 1,
+      msg.pose.position.x, msg.pose.position.y, g0.position.x, g0.position.y, d0);
 
   // decide if we've arrived at it
   if (d0 < TOLERANCE) { // Arrived at this goal
@@ -175,8 +175,9 @@ void poseCallback(const geometry_msgs::PoseStamped& msg) {
       // Recalculate math
       v0.x = g0.position.x - msg.pose.position.x;
       v0.y = g0.position.y - msg.pose.position.y;
-      v0.z = g0.position.z - msg.pose.position.z;
-      d0= std::sqrt(std::pow(v0.x, 2.0) + std::pow(v0.y, 2.0) + std::pow(v0.z, 2.0));
+      d0 = std::sqrt(std::pow(v0.x, 2.0) + std::pow(v0.y, 2.0));
+      ROS_DEBUG("WAYPOINT %d: (%0.3f,%0.3f) -> (%0.3f,%0.3f) = %0.3fm", g_goals_index + 1,
+          msg.pose.position.x, msg.pose.position.y, g0.position.x, g0.position.y, d0);
     } else { // Finished
       ROS_INFO("FINISHED ALL WAYPOINTS");
       // Tell navigation to stop
@@ -185,19 +186,27 @@ void poseCallback(const geometry_msgs::PoseStamped& msg) {
     }
   }
 
-  // try to promote to next waypoint if we're closer to it than current
+  // try to promote to next waypoint if we're closer to it than current to the it
   // TODO: This was on an else in the other code, but seems like we should be
   // able to promote even if we've moved forward, it just probably wouldn't
   // happen.
   if (g_goals_index + 1 < g_goals_length) {
     geometry_msgs::Pose g1 = g_goals[g_goals_index + 1];
+
     geometry_msgs::Vector3 v1;
-    double d1;
     v1.x = g1.position.x - msg.pose.position.x;
     v1.y = g1.position.y - msg.pose.position.y;
-    v1.z = g1.position.z - msg.pose.position.z;
-    d1 = std::sqrt(std::pow(v1.x, 2.0) + std::pow(v1.y, 2.0) + std::pow(v1.z, 2.0));
-    if (d1 < d0) { // pose -> g1 smaller than pose -> g0, promote
+    double d1 = std::sqrt(std::pow(v1.x, 2.0) + std::pow(v1.y, 2.0));
+    ROS_DEBUG("WAYPOINT %d: (%0.3f,%0.3f) -> (%0.3f,%0.3f) = %0.3fm", g_goals_index + 1,
+        msg.pose.position.x, msg.pose.position.y, g1.position.x, g1.position.y, d1);
+
+    geometry_msgs::Vector3 v01;
+    v01.x = g1.position.x - g0.position.x;
+    v01.y = g1.position.y - g0.position.y;
+    double d01 = std::sqrt(std::pow(v01.x, 2.0) + std::pow(v01.y, 2.0));
+    ROS_DEBUG("WAYPOINT %d: (%0.3f,%0.3f) -> (%0.3f,%0.3f) = %0.3fm", g_goals_index + 1,
+        g0.position.x, g0.position.y, g1.position.x, g1.position.y, d01);
+    if (d1 < d01) { // pose -> g1 smaller than g0 -> g1, promote
       dirty = true;
       g_goal_statuses[g_goals_index] = 2;
       ROS_INFO("FINISHED WAYPOINT %d (PROMOTION): (%0.3f,%0.3f)", g_goals_index, g1.position.x, g1.position.y);

@@ -59,6 +59,7 @@ void quit(int sig)
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "teleop_key");
+  ROS_INFO("teleop_key started");
   TeleopKey teleop_key;
 
   signal(SIGINT, quit);

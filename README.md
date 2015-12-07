@@ -29,13 +29,28 @@ windows will come back to your host.
 roscore
 rosrun rqt_console rqt_console
 rosrun rqt_logger_level rqt_logger_level
+rosrun tf static_transform_publisher 0 0 0 0 0 0 "map" "lisa" 100
 ```
 
 The `rqt_console` and `rqt_logger_level` command will popup the GUIs in
-which you can set log levels and view ouptut.
+which you can set log levels and view ouptut. The static transform
+publisher will just run but allows the various rviz integrations and
+graphing to work.
 
 
 ## Nodes
+
+### Automatic
+
+You can start the core LISA nodes (i.e. roscore, localizer, waypoint
+manager, etc.) by using roslaunch:
+
+```
+roslaunch core.launch
+```
+
+If you want to teleoperate, watch on rviz, simulate, etc. you'll need to
+run specific nodes below.
 
 
 ### Localizer
@@ -52,6 +67,28 @@ sensor data.
 
 #### Publishes
 * `/lisa/pose` - The pose (stamped) of the robot; i.e. its position and orientation.
+
+
+### Waypoint Manager
+```
+rosrun lisa waypoint_manager
+```
+
+The waypoint manager is responsible for accumulating waypoints and
+updating LISA's internal goal based on the next waypoint.
+
+#### Subscribes
+* `/move_base_simple/goal` - Adds a goal (in-order) as a waypoint; can
+  be used with RViz '2D Nav Goal'.
+* `/lisa/pose` - The pose (stamped) of the robot; i.e. its position and orientation.
+
+#### Publishes
+* `/visualization_marker` - The goals/waypoints received as SPHERE markers.
+* `/lisa/goal` - The goals/waypoints received as SPHERE markers.
+
+#### Services
+* `/waypoint_manager/clear` - Clears any current waypoints.
+* `/waypoint_manager/reset` - Resets to the first waypoint.
 
 
 ### Teleoperator (Keyboard)
@@ -152,3 +189,14 @@ For example for 1 m/s straight forward, turning 5 degrees per second:
 ```
 rostopic pub -1 /lisa/twist geometry_msgs/Twist -- '[1.0, 0.0, 0.0]' '[0.0872665, 0.0, 0.0]'
 ```
+
+### Waypoints
+
+To add a waypoint to the current list
+```
+rostopic pub -1 /lisa/sensors/imu sensor_msgs/Imu -- '[0, [0,0], "lisa"]' '<position>' '<orientation>'
+```
+* `<position>` is a 3d point and should be an array of three doubles `[x, y, z]`.
+* `<orientation>` is a quaternion and should be an array of four doubles `[x, y, z, w]`.
+**NOTE: The waypoint only pays attention to `position.x` and
+`position.y` currently.**

@@ -69,6 +69,25 @@ sensor data.
 * `/lisa/pose` - The pose (stamped) of the robot; i.e. its position and orientation.
 
 
+### Navigator
+```
+rosrun lisa navigator
+```
+
+The navigator is responsible for listening to goals and poses and sending Twist instructions for the robot to achieve the goals.
+
+#### Subscribes
+* `/lisa/pose` - The robots current pose.
+* `/lisa/goal` - The robots current goal.
+
+#### Publishes
+* `/lisa/twist` - The target linear and agular velocities for the robot.
+
+#### Services
+* `/navigator/start` - Starts navigation of the robot according to the goal topic.
+* `/navigator/stop` - Stops navigation and the robot..
+
+
 ### Waypoint Manager
 ```
 rosrun lisa waypoint_manager

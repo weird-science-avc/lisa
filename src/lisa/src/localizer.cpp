@@ -117,11 +117,23 @@ int main(int argc, char **argv) {
       //updatePoseFirstPass(distance, last_yaw, yaw_delta);
 
       // Simplified (Turtlesim)
-      g_pose.pose.position.x += std::sin(g_yaw) * distance;
-      g_pose.pose.position.y += std::cos(g_yaw) * distance;
+      g_pose.pose.position.x += std::cos(g_yaw) * distance;
+      g_pose.pose.position.y += std::sin(g_yaw) * distance;
       g_pose.pose.orientation = tf::createQuaternionMsgFromYaw(g_yaw);
 
-      // Update the path and publish
+      ROS_DEBUG("QUATERNION: (%0.3f,%0.3f,%0.3f,%0.3f)",
+          g_pose.pose.orientation.x,
+          g_pose.pose.orientation.y,
+          g_pose.pose.orientation.z,
+          g_pose.pose.orientation.w
+          );
+
+      // Publish the pose and path
+      g_pose_pub.publish(g_pose);
+      ROS_DEBUG("POSITION: (%.3f,%.3f):%.3f",
+          g_pose.pose.position.x,
+          g_pose.pose.position.y,
+          g_yaw);
       g_path.points.push_back(g_pose.pose.position);
       g_marker_pub.publish(g_path);
 

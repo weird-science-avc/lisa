@@ -3,16 +3,26 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Imu.h>
+#include <std_msgs/Float64.h>
 #include <tf/transform_datatypes.h>
 
 #define PI 3.14159265
 #define WHEEL_ENCODER_M_DISTANCE_FROM_TICKS 0.0544737
 
-double g_yaw = 0.0;
-geometry_msgs::Twist g_twist;
+// Define max turning radius of car (66" right and 77" left, pick 80")
+#define INCH_TO_M 0.0254
+const double kMaxTurnRadius = 80.0 * INCH_TO_M;
 
-void twistCallback(const geometry_msgs::Twist& msg) {
-  g_twist = msg;
+double g_steering = 0.0; // [-1.0, 1.0] - unitless
+double g_velocity = 0.0; // m/s
+double g_yaw = 0.0;
+
+void steeringCmdCallback(const std_msgs::Float64& msg) {
+  g_steering = msg.data;
+}
+
+void velocityCmdCallback(const std_msgs::Float64& msg) {
+  g_velocity = msg.data;
 }
 
 void initialposeCallback(const geometry_msgs::PoseWithCovarianceStamped& msg) {
@@ -27,7 +37,8 @@ int main(int argc, char** argv) {
   ros::NodeHandle n;
 
   ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("lisa/sensors/imu", 1);
-  ros::Subscriber twist_sub = n.subscribe("lisa/twist", 1, twistCallback);
+  ros::Subscriber steering_sub = n.subscribe("lisa/cmd_steering", 1, steeringCmdCallback);
+  ros::Subscriber velocity_sub = n.subscribe("lisa/cmd_velocity", 1, velocityCmdCallback);
 
   // Subscribe to /initialpose so we can force the robot's orientation
   ros::Subscriber initalpose_sub = n.subscribe("initialpose", 1, initialposeCallback);
@@ -43,15 +54,18 @@ int main(int argc, char** argv) {
     double dt = (new_stamp - stamp).toSec();
     stamp = new_stamp;
 
-    // Update yaw based on current twist if we have angular velocity
-    double angular = g_twist.angular.x;
-    ROS_DEBUG("[IMU SIMULATOR] angular=%0.3f (dt=%0.3fs)", angular, dt);
-    if (angular != 0.0) {
-      g_yaw = angles::normalize_angle_positive(g_yaw + angular * dt);
+    // Only publish if we're steering and moving
+    // TODO: Consider allowing no turn close to 0
+    if (g_steering != 0.0 && g_velocity > 0.0) {
+      // Find turn radius as inverse of steering
+      double r = kMaxTurnRadius / g_steering;
 
+      // w = v / r
+      // wt = vt / r
+      g_yaw = g_yaw + ((g_velocity * dt) / r);
+      // TODO: Consider putting in angular and linear velocity
       sensor_msgs::Imu msg;
       msg.orientation = tf::createQuaternionMsgFromYaw(g_yaw);
-      // TODO: Consider putting in angular and linear velocity
       imu_pub.publish(msg);
       ROS_INFO("[IMU SIMULATOR] yaw=%0.3f", g_yaw);
     }

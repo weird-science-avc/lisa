@@ -1,15 +1,15 @@
 #include <ros/ros.h>
-#include <geometry_msgs/Twist.h>
+#include <std_msgs/Float64.h>
 #include <std_msgs/UInt64.h>
 
 #define WHEEL_ENCODER_M_DISTANCE_FROM_TICKS 0.0544737
 
 double g_distance = 0.0;
 unsigned int g_ticks = 0;
-geometry_msgs::Twist g_twist;
+double g_velocity = 0.0;
 
-void twistCallback(const geometry_msgs::Twist& msg) {
-  g_twist = msg;
+void velocityCmdCallback(const std_msgs::Float64& msg) {
+  g_velocity = msg.data;
 }
 
 int main(int argc, char** argv) {
@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle n;
 
   ros::Publisher wheel_encoder_pub = n.advertise<std_msgs::UInt64>("lisa/sensors/wheel_encoder", 1);
-  ros::Subscriber twist_sub = n.subscribe("lisa/twist", 1, twistCallback);
+  ros::Subscriber velocity_sub = n.subscribe("lisa/cmd_velocity", 1, velocityCmdCallback);
 
   // Initialize time stamp
   ros::Time stamp = ros::Time::now();
@@ -31,9 +31,9 @@ int main(int argc, char** argv) {
     double dt = (new_stamp - stamp).toSec();
     stamp = new_stamp;
 
-    // Update distance based on current twist if we have linear velocity
-    double linear = g_twist.linear.x;
-    g_distance += linear * dt;
+    // Update distance based on last velocity command
+    g_distance += g_velocity * dt;
+
     // Calculate new IMU ticks (rounded)
     unsigned int ticks = int(g_distance / WHEEL_ENCODER_M_DISTANCE_FROM_TICKS);
 

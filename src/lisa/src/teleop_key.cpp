@@ -2,10 +2,10 @@
 // Except changed to track velocity and publish changes, not commands; i.e. no
 // new publish means last published Twist is still in effect.
 #include <ros/ros.h>
-#include <geometry_msgs/Twist.h>
 #include <signal.h>
-#include <termios.h>
+#include <std_msgs/Float64.h>
 #include <stdio.h>
+#include <termios.h>
 
 #define KEYCODE_R 0x43
 #define KEYCODE_L 0x44
@@ -17,7 +17,7 @@
 #define STEP_SPEED 1
 #define MAX_SPEED 20
 
-// Steering (degrees) [0,10]
+// Steering [0,10]
 #define STEP_STEERING 1
 #define MAX_STEERING 10
 
@@ -42,7 +42,8 @@ private:
   ros::NodeHandle node;
   int speed, steering;
   double l_scale, a_scale;
-  ros::Publisher twist_pub;
+  ros::Publisher steering_pub;
+  ros::Publisher velocity_pub;
 };
 
 int kfd = 0;
@@ -78,12 +79,12 @@ TeleopKey::TeleopKey() {
   node.param("scale_angular", a_scale, a_scale);
   node.param("scale_linear", l_scale, l_scale);
 
-  twist_pub = node.advertise<geometry_msgs::Twist>("lisa/twist", 1);
+  steering_pub = node.advertise<std_msgs::Float64>("lisa/cmd_steering", 1, true);
+  velocity_pub = node.advertise<std_msgs::Float64>("lisa/cmd_velocity", 1, true);
 }
 
 void TeleopKey::keyLoop() {
   char c;
-  bool dirty = false;
 
   // get the console in raw mode
   tcgetattr(kfd, &cooked);
@@ -111,6 +112,7 @@ void TeleopKey::keyLoop() {
     ROS_DEBUG("value: 0x%02X\n", c);
 
     // Increase/decrease velocity by step according to key pressed
+    bool dirty = false;
     switch(c) {
       case KEYCODE_L:
         ROS_DEBUG("LEFT");
@@ -136,22 +138,16 @@ void TeleopKey::keyLoop() {
 
     // If dirty calculate linear and angular velocity and publish
     if(dirty == true) {
+      std_msgs::Float64 msg;
       ROS_INFO("speed=%d, steering=%d", speed, steering);
-      geometry_msgs::Twist twist;
-      // Calclate linear and angular velocity
-      double linear = speed * MPH_IN_M_S;
-      twist.linear.x = l_scale * linear;
-      if (speed == 0) { // straight
-        twist.angular.x = 0.0;
-      } else { // turning
-        // w = v / r
-        double angular = linear / turnRadiusFromSteering(steering);
-        twist.angular.x = a_scale * angular;
-      }
 
-      // Publish and clear dirty
-      twist_pub.publish(twist);
-      dirty = false;
+      // Calculate steering and publish
+      msg.data = steering / double(MAX_STEERING);
+      steering_pub.publish(msg);
+
+      // Calculate velocity and publish
+      msg.data = speed * MPH_IN_M_S;
+      velocity_pub.publish(msg);
     }
   }
 

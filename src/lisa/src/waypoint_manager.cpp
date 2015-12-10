@@ -4,7 +4,7 @@
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/Marker.h>
 
-#define TOLERANCE 0.5
+#define TOLERANCE 5.0
 
 ros::Publisher g_marker_pub;
 ros::Publisher g_goal_pub;

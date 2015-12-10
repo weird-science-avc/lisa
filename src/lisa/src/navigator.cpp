@@ -2,8 +2,8 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Vector3.h>
+#include <std_msgs/Float64.h>
 #include <std_srvs/Empty.h>
 #include <stdio.h>
 #include <tf/transform_datatypes.h>
@@ -15,17 +15,11 @@
 #define LOW_VELOCITY 1.0 // m/s
 #define HIGH_VELOCITY 3.5 // m/s
 
-// angular = linear * yaw_delta * kAngularScale
-#define HIGH_ANGULAR PI // rads/s
-const double kAngularScale = HIGH_ANGULAR / HIGH_VELOCITY / PI;
-
 geometry_msgs::Pose g_pose, g_goal;
 bool g_started;
 
 void poseCallback(const geometry_msgs::PoseStamped& msg) {
   g_pose = msg.pose;
-  //ROS_DEBUG("NAVIGATION: pose=(%0.3f,%0.3f):%0.3f",
-  //    g_pose.position.x, g_pose.position.y, tf::getYaw(g_pose.orientation));
 }
 
 void goalCallback(const geometry_msgs::PoseStamped& msg) {
@@ -53,7 +47,8 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
 
   // Setup publishers:
-  ros::Publisher twist_pub = n.advertise<geometry_msgs::Twist>("lisa/twist", 1, true);
+  ros::Publisher steering_pub = n.advertise<std_msgs::Float64>("lisa/cmd_steering", 1, true);
+  ros::Publisher velocity_pub = n.advertise<std_msgs::Float64>("lisa/cmd_velocity", 1, true);
 
   // Setup subscribers:
   ros::Subscriber pose_sub = n.subscribe("/lisa/pose", 1, poseCallback);
@@ -64,11 +59,13 @@ int main(int argc, char **argv)
   ros::ServiceServer stop_service = n.advertiseService("/navigator/stop", stop);
 
   // Loop variables
-  geometry_msgs::Twist last_twist;
+  double last_steering = 0.0;
+  double last_velocity = 0.0;
   ros::Rate loop_rate(10); // Hz
   while (ros::ok()) {
-    // Get twisted based on started or stopped
-    geometry_msgs::Twist twist;
+    // Get velocity and steering based on started or stopped
+    double steering = 0.0;
+    double velocity = 0.0;
     if (g_started) {
       // get a vector from the current pose to our goal (and distance)
       // TODO: Aren't there helpers for constructing the vector and getting distance, etc.?
@@ -78,7 +75,7 @@ int main(int argc, char **argv)
       v.z = g_goal.position.z - g_pose.position.z;
       double d = std::sqrt(std::pow(v.x, 2.0) + std::pow(v.y, 2.0) + std::pow(v.z, 2.0));
       double yaw = std::atan2(v.y, v.x); // [-PI, PI]
-      float yaw_delta = angles::shortest_angular_distance(tf::getYaw(g_pose.orientation), yaw);
+      double yaw_delta = angles::shortest_angular_distance(tf::getYaw(g_pose.orientation), yaw);
       ROS_DEBUG("NAVIGATION: pose=(%0.3f,%0.3f):%0.3f",
           g_pose.position.x, g_pose.position.y, tf::getYaw(g_pose.orientation));
       ROS_DEBUG("NAVIGATION: goal=(%0.3f,%0.3f)",
@@ -86,30 +83,30 @@ int main(int argc, char **argv)
       ROS_DEBUG("NAVIGATION: v=(%0.3f,%0.3f), dist=%0.3f, yaw=%0.3f, yaw_delta=%0.3f",
           v.x, v.y, d, yaw, yaw_delta);
 
-      // Compose a twist message for what to do with defaults
-      twist.linear.x = LOW_VELOCITY;
+      // Discrete velocity m/s
+      velocity = (d > APPROACH_DELTA) ?  HIGH_VELOCITY : LOW_VELOCITY;
 
-      // Linear velocty is either high or low
-      if (d > APPROACH_DELTA) {
-        twist.linear.x = HIGH_VELOCITY;
-      }
-
-      // Angular velocty is continuous to max of 10deg left/right
-      twist.angular.x = 0.0;
-
-      if (std::abs(yaw_delta) > 0.0) {
-        twist.angular.x = twist.linear.x * yaw_delta * kAngularScale;
-      }
+      // Continuous steering [-1.0, 1.0] unitless
+      steering = yaw_delta / PI;
     }
 
     // Publish if changed
-    if (twist.linear.x != last_twist.linear.x || twist.angular.x != last_twist.angular.x) {
-      twist_pub.publish(twist);
-      ROS_INFO("NAVIGATION: linear=%0.3f, angular=%0.3f", twist.linear.x, twist.angular.x);
+    if (steering != last_steering) {
+      std_msgs::Float64 msg;
+      msg.data = steering;
+      steering_pub.publish(msg);
+      ROS_INFO("NAVIGATION: steering=%0.3f", steering);
+    }
+    if (velocity != last_velocity) {
+      std_msgs::Float64 msg;
+      msg.data = velocity;
+      velocity_pub.publish(msg);
+      ROS_INFO("NAVIGATION: velocity=%0.3f", velocity);
     }
 
     // Loop variable
-    last_twist = twist;
+    last_steering = steering;
+    last_velocity = velocity;
 
     ros::spinOnce();
     loop_rate.sleep();

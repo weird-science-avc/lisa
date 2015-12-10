@@ -74,14 +74,18 @@ sensor data.
 rosrun lisa navigator
 ```
 
-The navigator is responsible for listening to goals and poses and sending Twist instructions for the robot to achieve the goals.
+The navigator is responsible for listening to goals and poses and
+sending command instructions for steering and velocity.
 
 #### Subscribes
 * `/lisa/pose` - The robots current pose.
 * `/lisa/goal` - The robots current goal.
 
 #### Publishes
-* `/lisa/twist` - The target linear and agular velocities for the robot.
+* `/lisa/cmd_steering` - The target steering from [-1.0,1.0]; this is
+  unitless and is meant to represent steer all left (1.0) and all right
+  (-1.0) and continously in between.
+* `/lisa/cmd_velocity` - The target velocity in m/s.
 
 #### Services
 * `/navigator/start` - Starts navigation of the robot according to the goal topic.
@@ -115,11 +119,14 @@ updating LISA's internal goal based on the next waypoint.
 rosrun lisa teleop_key
 ```
 
-The Teleoperator (Keyboard) listens to the keyboard and publishes Twist
-messages to control the robot.
+The Teleoperator (Keyboard) listens to the keyboard and publishes
+steering and velocity messages.
 
 #### Publishes
-* `/lisa/twist` - The Twist message with the target velocities.
+* `/lisa/cmd_steering` - The target steering from [-1.0,1.0]; this is
+  unitless and is meant to represent steer all left (1.0) and all right
+  (-1.0) and continously in between.
+* `/lisa/cmd_velocity` - The target velocity in m/s.
 
 
 ### IMU Simulator
@@ -127,11 +134,14 @@ messages to control the robot.
 rosrun lisa imu_simulator
 ```
 
-The IMU Simulator listens to Twist messages and generates IMU messages
-according to the target twist message.
+The IMU Simulator listens to steering and velocity messages and
+generates IMU messages that simulate the robots behavior.
 
 #### Subscribes
-* `/lisa/twist` - The Twist message with the target velocities.
+* `/lisa/cmd_steering` - The target steering from [-1.0,1.0]; this is
+  unitless and is meant to represent steer all left (1.0) and all right
+  (-1.0) and continously in between.
+* `/lisa/cmd_velocity` - The target velocity in m/s.
 
 #### Publishes
 * `/lisa/sensors/imu` - The IMU values.
@@ -142,11 +152,11 @@ according to the target twist message.
 rosrun lisa wheel_encoder_simulator
 ```
 
-The Wheel Encoder Simulator listens to Twist messages and generates
-wheel encoder messages according the target twist message.
+The Wheel Encoder Simulator listens to velocity messages and generates
+wheel encoder messages that simulate the robots behavior.
 
 #### Subscribes
-* `/lisa/twist` - The Twist message with the target velocities.
+* `/lisa/cmd_velocity` - The target velocity in m/s.
 
 #### Publishes
 * `/lisa/sensors/wheel_encoder` - The wheel encoder values.
@@ -170,7 +180,7 @@ example to listen to pose:
 rostopic echo /lisa/pose
 ```
 
-In order to publish fake data on sensors, twist, etc. you can directly publish to the topics using `rostopic pub ...`.
+In order to publish fake data on sensors, commands, etc. you can directly publish to the topics using `rostopic pub ...`.
 
 ### Wheel Encoder
 ```
@@ -195,18 +205,19 @@ For example for PI/2 (90 deg) rotation:
 rostopic pub -1 /lisa/sensors/imu sensor_msgs/Imu -- '[0, [0,0], "lisa"]' '[0.0, 0.0, 0.707, 0.707]' '[0,0,0,0,0,0,0,0,0]' '[0,0,0]' '[0,0,0,0,0,0,0,0,0]' '[0,0,0]' '[0,0,0,0,0,0,0,0,0]'
 ```
 
-### Robot Target Velocities
+### Robot Commands
 ```
-rostopic pub -1 /lisa/twist geometry_msgs/Twist -- '<linear>' '<angular>'
+rostopic pub -1 /lisa/cmd_steering st_msgs/Float64 '<steering>'
+rostopic pub -1 /lisa/cmd_velocity st_msgs/Float64 '<velocity>'
 ```
-* `<linear>` is a vector3 for linear velocity and array of three doubles
-  `[x, y, z]`; use only `x` for velocity.
-* `<angular>` is a vector3 for angular velocity and array of three
-  doubles `[x, y, z]`; use only `x` for velocity.
+* `<steering>` is a unitless value within [-1.0,1.0] to represent the
+  amount of steering from all left (1.0) to all right (-1.0).
+* `<velocity>` is the target velocity in m/s.
 
-For example for 1 m/s straight forward, turning 5 degrees per second:
+For example for 1 m/s turning a litle to the left:
 ```
-rostopic pub -1 /lisa/twist geometry_msgs/Twist -- '[1.0, 0.0, 0.0]' '[0.0872665, 0.0, 0.0]'
+rostopic pub -1 /lisa/cmd_steering st_msgs/Float64 '0.25'
+rostopic pub -1 /lisa/cmd_velocity st_msgs/Float64 '1.0'
 ```
 
 ### Waypoints

@@ -3,4 +3,8 @@
   <node name="localizer" pkg="lisa" type="localizer" />
   <node name="navigator" pkg="lisa" type="navigator" />
   <node name="waypoint_manager" pkg="lisa" type="waypoint_manager" />
+
+  <!-- Swap in actual HW modules here as they're available -->
+  <node name="imu_simulator" pkg="lisa" type="imu_simulator" />
+  <node name="wheel_encoder_simulator" pkg="lisa" type="wheel_encoder_simulator" />
 </launch>

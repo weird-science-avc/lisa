@@ -206,6 +206,12 @@ rostopic pub -1 /lisa/sensors/imu sensor_msgs/Imu -- '[0, [0,0], "lisa"]' '[0.0,
 ```
 
 ### Robot Commands
+#### Start and Stop
+```
+rosservice call /navigator/start
+rosservice call /navigator/stop
+```
+#### Move 
 ```
 rostopic pub -1 /lisa/cmd_steering st_msgs/Float64 '<steering>'
 rostopic pub -1 /lisa/cmd_velocity st_msgs/Float64 '<velocity>'

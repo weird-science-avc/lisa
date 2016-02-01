@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   sensor_msgs
   std_msgs
+  nav_msgs
   tf
 )
 
@@ -94,6 +95,7 @@ catkin_package(
     geometry_msgs
     message_runtime
     std_msgs
+    nav_msgs
     tf
 #  DEPENDS system_lib
 )
@@ -154,6 +156,11 @@ add_dependencies(imu_simulator ${catkin_EXPORTED_TARGETS})
 add_executable(wheel_encoder_simulator src/wheel_encoder_simulator.cpp)
 target_link_libraries(wheel_encoder_simulator ${catkin_LIBRARIES})
 add_dependencies(wheel_encoder_simulator ${catkin_EXPORTED_TARGETS})
+
+## Occupancy Map Node
+add_executable(occupancy_map src/occupancy_map.cpp)
+target_link_libraries(occupancy_map ${catkin_LIBRARIES})
+add_dependencies(occupancy_map ${catkin_EXPORTED_TARGETS})
 
 #add_executable(listener src/listener.cpp)
 #target_link_libraries(listener ${catkin_LIBRARIES})

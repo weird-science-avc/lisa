@@ -1,3 +1,8 @@
 .vagrant/
-devel/
+devel/*
+!devel/env.sh
+!devel/setup.sh
+!devel/setup.bash
+!devel/setup.zsh
+!devel/_setup_util.py
 build/

@@ -5,12 +5,13 @@ project(lisa)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  message_generation
   roscpp
   rospy
+  rosgo
 
   angles
   geometry_msgs
-  message_generation
   sensor_msgs
   std_msgs
   nav_msgs
@@ -70,10 +71,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 # Generate added messages and services with any dependencies listed here
-#generate_messages(
-#  DEPENDENCIES
-#  std_msgs
-#)
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -91,6 +92,7 @@ catkin_package(
   CATKIN_DEPENDS
     roscpp
     rospy
+    rosgo
 
     geometry_msgs
     message_runtime
@@ -122,6 +124,23 @@ include_directories(
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(lisa_node lisa_generate_messages_cpp)
+
+#rosgo_generate_messages(
+#  std_srvs
+#  actionlib_msgs
+#  geometry_msgs
+#  sensor_msgs
+#  nav_msgs
+#)
+
+#add_dependencies(lisa_gengo std_msgs_gengo)
+
+rosgo_add_executable(
+  ${PROJECT_NAME}/test
+  DEPENDS ${catkin_GO_LIBRARIES} ${PROJECT_NAME}_gengo)
+
+#rosgo_add_test(${PROJECT_NAME}/test_message
+#               DEPENDS rosgo_core rosgo_tests_gengo)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(lisa_node

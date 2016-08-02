@@ -51,10 +51,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-## Generate messages in the 'msg' folder
-#add_message_files(
-#  FILES
-#)
+# Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  OdometrySensor.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -123,7 +124,7 @@ include_directories(
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(lisa_node lisa_generate_messages_cpp)
+#add_dependencies(lisa_node lisa_generate_messages_cpp)
 
 #rosgo_generate_messages(
 #  std_srvs
@@ -134,13 +135,6 @@ include_directories(
 #)
 
 #add_dependencies(lisa_gengo std_msgs_gengo)
-
-rosgo_add_executable(
-  ${PROJECT_NAME}/test
-  DEPENDS ${catkin_GO_LIBRARIES} ${PROJECT_NAME}_gengo)
-
-#rosgo_add_test(${PROJECT_NAME}/test_message
-#               DEPENDS rosgo_core rosgo_tests_gengo)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(lisa_node
@@ -184,6 +178,15 @@ add_dependencies(occupancy_map ${catkin_EXPORTED_TARGETS})
 #add_executable(listener src/listener.cpp)
 #target_link_libraries(listener ${catkin_LIBRARIES})
 #add_dependencies(listener beginner_tutorials_generate_messages_cpp)
+
+## Test Talker (Go)
+catkin_add_go_executable(
+  test_talker
+  DEPENDS ${catkin_GO_LIBRARIES} ${PROJECT_NAME}_gengo)
+
+#rosgo_add_test(${PROJECT_NAME}/test_message
+#               DEPENDS rosgo_core rosgo_tests_gengo)
+
 
 #############
 ## Install ##

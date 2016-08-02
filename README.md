@@ -1,5 +1,6 @@
-[![Stories in Ready](https://badge.waffle.io/weird-science-avc/lisa.png?label=ready&title=Ready)](https://waffle.io/weird-science-avc/lisa)
 # lisa
+
+[![Stories in Ready](https://badge.waffle.io/weird-science-avc/lisa.png?label=ready&title=Ready)](https://waffle.io/weird-science-avc/lisa)
 
 This is the repository for the ROS based robot lisa, which is an
 autonomous RC car controller.

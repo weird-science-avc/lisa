@@ -4,7 +4,8 @@ machine:
 
 dependencies:
   pre:
-    - go get github.com/ppg/rosgo/...
+    - go get -u github.com/ppg/rosgo/...
+    - go get -d -u github.com/hybridgroup/gobot/...
 
   override:
     - mkdir -p "$GOPATH/src/$IMPORT_PATH"

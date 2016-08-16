@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	"github.com/hybridgroup/gobot"
+	"github.com/hybridgroup/gobot/platforms/beaglebone"
 	"github.com/hybridgroup/gobot/platforms/firmata"
+	"github.com/hybridgroup/gobot/platforms/gpio"
 	// TODO(ppg): Move this to gopkg.in
 	"github.com/ppg/rosgo/msgs/std_msgs"
 	"github.com/ppg/rosgo/ros"
@@ -49,28 +51,32 @@ func main() {
 	robot := gobot.NewRobot("drivetrain")
 
 	// Setup steering
-	var steering Steerer
+	var steeringWriter gpio.ServoWriter
 	switch steeringConfig["type"] {
 	case "firmata":
-		firmataAdaptor := findOrConnectFirmataAdaptor(robot, steeringConfig["port"].(string))
-		d := NewSteeringDriver(firmataAdaptor, "steering", steeringConfig["pin"].(string))
-		robot.AddDevice(d)
-		steering = d
+		steeringWriter = findOrCreateFirmataAdaptor(robot, steeringConfig["port"].(string))
+	case "beaglebone":
+		steeringWriter = findOrCreateBeagleboneAdaptor(robot)
 	default:
 		panic(fmt.Sprintf("Unrecognized steering device type: %s", steeringConfig["type"].(string)))
 	}
+	steeringDriver := NewSteeringDriver(steeringWriter, "steering", steeringConfig["pin"].(string))
+	robot.AddDevice(steeringDriver)
+	var steering Steerer = steeringDriver
 
 	// Setup speed
-	var speed Speeder
+	var speedWriter gpio.ServoWriter
 	switch speedConfig["type"] {
 	case "firmata":
-		firmataAdaptor := findOrConnectFirmataAdaptor(robot, speedConfig["port"].(string))
-		d := NewESCDriver(firmataAdaptor, "speed", speedConfig["pin"].(string))
-		robot.AddDevice(d)
-		speed = d
+		speedWriter = findOrCreateFirmataAdaptor(robot, speedConfig["port"].(string))
+	case "beaglebone":
+		speedWriter = findOrCreateBeagleboneAdaptor(robot)
 	default:
 		panic(fmt.Sprintf("Unrecognized speed device type: %s", speedConfig["type"]))
 	}
+	ecsDriver := NewESCDriver(speedWriter, "speed", speedConfig["pin"].(string))
+	robot.AddDevice(ecsDriver)
+	var speed Speeder = ecsDriver
 
 	// Start gotot Robot; stop on exit
 	errs := robot.Start()
@@ -102,7 +108,7 @@ func main() {
 
 var firmataAdaptors map[string]*firmata.FirmataAdaptor
 
-func findOrConnectFirmataAdaptor(robot *gobot.Robot, port string) (adaptor *firmata.FirmataAdaptor) {
+func findOrCreateFirmataAdaptor(robot *gobot.Robot, port string) (adaptor *firmata.FirmataAdaptor) {
 	if firmataAdaptors == nil {
 		firmataAdaptors = make(map[string]*firmata.FirmataAdaptor)
 	}
@@ -114,4 +120,14 @@ func findOrConnectFirmataAdaptor(robot *gobot.Robot, port string) (adaptor *firm
 		firmataAdaptors[port] = adaptor
 	}
 	return
+}
+
+var beagleboneAdaptor *beaglebone.BeagleboneAdaptor
+
+func findOrCreateBeagleboneAdaptor(robot *gobot.Robot) *beaglebone.BeagleboneAdaptor {
+	if beagleboneAdaptor == nil {
+		beagleboneAdaptor = beaglebone.NewBeagleboneAdaptor("beaglebone")
+		robot.AddConnection(beagleboneAdaptor)
+	}
+	return beagleboneAdaptor
 }

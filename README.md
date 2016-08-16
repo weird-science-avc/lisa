@@ -1,6 +1,6 @@
 # lisa
-
 [![Stories in Ready](https://badge.waffle.io/weird-science-avc/lisa.png?label=ready&title=Ready)](https://waffle.io/weird-science-avc/lisa)
+[![CircleCI](https://circleci.com/gh/weird-science-avc/lisa.svg?style=svg)](https://circleci.com/gh/weird-science-avc/lisa)
 
 This is the repository for the ROS based robot lisa, which is an
 autonomous RC car controller.
@@ -213,7 +213,7 @@ rostopic pub -1 /lisa/sensors/imu sensor_msgs/Imu -- '[0, [0,0], "lisa"]' '[0.0,
 rosservice call /navigator/start
 rosservice call /navigator/stop
 ```
-#### Move 
+#### Move
 ```
 rostopic pub -1 /lisa/cmd_steering st_msgs/Float64 '<steering>'
 rostopic pub -1 /lisa/cmd_velocity st_msgs/Float64 '<velocity>'

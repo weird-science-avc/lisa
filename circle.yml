@@ -1,0 +1,23 @@
+machine:
+  environment:
+    IMPORT_PATH: "github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+
+dependencies:
+  pre:
+    - go get -u github.com/ppg/rosgo/...
+    - go get -d -u github.com/hybridgroup/gobot/...
+
+  override:
+    - mkdir -p "$GOPATH/src/$IMPORT_PATH"
+    - rsync -azC --delete ./ "$GOPATH/src/$IMPORT_PATH/"
+
+test:
+  pre:
+    - go tool vet -test ./nodes
+
+  override:
+    - go test ./nodes/...
+    - GOOS=linux GOARCH=arm GOARM=7 go build -a -v -o $CIRCLE_ARTIFACTS/drivetrain-arm7 ./nodes/drivetrain/...
+    - GOOS=linux GOARCH=amd64 go build -a -v -o $CIRCLE_ARTIFACTS/drivetrain-linux-amd64 ./nodes/drivetrain/...
+    # TODO(ppg): debug why this won't build on circleci :/
+    #- GOOS=darwin GOARCH=amd64 go build -a -v -o $CIRCLE_ARTIFACTS/drivetrain-darwin-amd64 ./nodes/drivetrain/...

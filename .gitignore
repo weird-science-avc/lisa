@@ -6,3 +6,6 @@ devel/*
 !devel/setup.zsh
 !devel/_setup_util.py
 build/
+
+# Build files
+nodes/drivetrain/drivetrain

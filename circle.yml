@@ -6,6 +6,7 @@ dependencies:
   pre:
     - go get -u github.com/ppg/rosgo/...
     - go get -d -u github.com/weird-science-avc/gobot/...
+    - mkdir -p "$GOPATH/src/hybridgroup/gobot"
     - ln -s "$GOPATH/src/weird-science-avc/gobot" "$GOPATH/src/hybridgroup/gobot"
 
   override:

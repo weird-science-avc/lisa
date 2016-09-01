@@ -72,7 +72,7 @@ func main() {
 	var steering Steerer = steeringDriver
 
 	// Setup speed
-	var speedWriter PwmDirectWriter
+	var speedWriter gpio.PwmDirectWriter
 	switch speedConfig["type"] {
 	case "firmata":
 		speedWriter = findOrCreateFirmataAdaptor(robot, speedConfig["port"].(string))

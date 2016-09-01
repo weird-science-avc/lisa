@@ -6,8 +6,8 @@ dependencies:
   pre:
     - go get -u github.com/ppg/rosgo/...
     - go get -d -u github.com/weird-science-avc/gobot/...
-    - mkdir -p "$GOPATH/src/hybridgroup/gobot"
-    - ln -s "$GOPATH/src/weird-science-avc/gobot" "$GOPATH/src/hybridgroup/gobot"
+    - mkdir -p "$GOPATH/src/github.com/hybridgroup/gobot"
+    - ln -s "$GOPATH/src/github.com/weird-science-avc/gobot" "$GOPATH/src/github.com/hybridgroup/gobot"
 
   override:
     - mkdir -p "$GOPATH/src/$IMPORT_PATH"

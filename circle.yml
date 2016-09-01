@@ -6,9 +6,10 @@ dependencies:
   pre:
     - go get -u github.com/ppg/rosgo/...
     - go get -d -u github.com/weird-science-avc/gobot/...
-    - rm -rf t "~/.go_workspace/src/github.com/hybridgroup"
-    - mkdir -p "~/.go_workspace/src/github.com/hybridgroup"
-    - ln -s "~/.go_workspace/src/github.com/weird-science-avc/gobot" "~/.go_workspace/src/github.com/hybridgroup/gobot"
+  post:
+    - rm -rf ~/.go_workspace/src/github.com/hybridgroup
+    - mkdir -p ~/.go_workspace/src/github.com/hybridgroup
+    - cp -R ~/.go_workspace/src/github.com/weird-science-avc/gobot ~/.go_workspace/src/github.com/hybridgroup
 
 test:
   pre:

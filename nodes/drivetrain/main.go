@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/hybridgroup/gobot"
 	"github.com/hybridgroup/gobot/platforms/beaglebone"
 	"github.com/hybridgroup/gobot/platforms/firmata"
 	"github.com/hybridgroup/gobot/platforms/gpio"
+	"github.com/hybridgroup/gobot/platforms/intel-iot/edison"
 	// TODO(ppg): Move this to gopkg.in
 	"github.com/ppg/rosgo/msgs/std_msgs"
 	"github.com/ppg/rosgo/ros"
@@ -41,11 +43,14 @@ func main() {
 		panic(fmt.Sprintf("failed to get steering parameter: %s", err))
 	}
 	steeringConfig := pSteeringConfig.(map[string]interface{})
+	log.Printf("steeringConfig: %+v", steeringConfig)
+
 	pSpeedConfig, err := node.GetParam("/drivetrain/speed")
 	if err != nil {
 		panic(fmt.Sprintf("failed to get speed parameter: %s", err))
 	}
 	speedConfig := pSpeedConfig.(map[string]interface{})
+	log.Printf("speedConfig: %+v", speedConfig)
 
 	// Create a robot
 	robot := gobot.NewRobot("drivetrain")
@@ -57,6 +62,8 @@ func main() {
 		steeringWriter = findOrCreateFirmataAdaptor(robot, steeringConfig["port"].(string))
 	case "beaglebone":
 		steeringWriter = findOrCreateBeagleboneAdaptor(robot)
+	case "edison":
+		steeringWriter = findOrCreateEdisonAdaptor(robot)
 	default:
 		panic(fmt.Sprintf("Unrecognized steering device type: %s", steeringConfig["type"].(string)))
 	}
@@ -65,12 +72,14 @@ func main() {
 	var steering Steerer = steeringDriver
 
 	// Setup speed
-	var speedWriter gpio.ServoWriter
+	var speedWriter PwmDirectWriter
 	switch speedConfig["type"] {
 	case "firmata":
 		speedWriter = findOrCreateFirmataAdaptor(robot, speedConfig["port"].(string))
 	case "beaglebone":
 		speedWriter = findOrCreateBeagleboneAdaptor(robot)
+	case "edison":
+		speedWriter = findOrCreateEdisonAdaptor(robot)
 	default:
 		panic(fmt.Sprintf("Unrecognized speed device type: %s", speedConfig["type"]))
 	}
@@ -99,6 +108,7 @@ func main() {
 	node.Logger().Info("subscribing to /lisa/cmd_velocity")
 	node.NewSubscriber("/lisa/cmd_velocity", std_msgs.MsgFloat64, func(msg *std_msgs.Float64) {
 		if err := speed.Speed(msg.Data); err != nil {
+			log.Printf("err: %+v", err)
 			node.Logger().Error(err.Error())
 		}
 	})
@@ -130,4 +140,14 @@ func findOrCreateBeagleboneAdaptor(robot *gobot.Robot) *beaglebone.BeagleboneAda
 		robot.AddConnection(beagleboneAdaptor)
 	}
 	return beagleboneAdaptor
+}
+
+var edisonAdaptor *edison.EdisonAdaptor
+
+func findOrCreateEdisonAdaptor(robot *gobot.Robot) *edison.EdisonAdaptor {
+	if edisonAdaptor == nil {
+		edisonAdaptor = edison.NewEdisonAdaptor("edison")
+		robot.AddConnection(edisonAdaptor)
+	}
+	return edisonAdaptor
 }

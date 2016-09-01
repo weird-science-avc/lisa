@@ -1,28 +1,32 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"log"
 
 	"github.com/hybridgroup/gobot"
-	"github.com/hybridgroup/gobot/platforms/gpio"
 )
 
-const maxSpeed = 10.0
+var ErrSpeedOutOfRange = errors.New("speed must be between 0.0 to 1.0")
 
-var ErrSpeedOutOfRange = fmt.Errorf("speed must be between 0.0 to %0.1f", maxSpeed)
+// An ESC requires the full range (mainly to 0) of PWM control:
+// - PwmWriter (Want 5%-10% duty cycle, limits us to about 12 steps of control)
+// - ServoWriter (0 doesn't map to 0 duty cycle)
+type PwmDirectWriter interface {
+	PwmDirectWrite(pin string, period, duty int) error
+}
 
 // ESCDriver represents a driver of an ESC (works like a Servo)
 type ESCDriver struct {
 	name       string
 	pin        string
-	connection gpio.ServoWriter
+	connection PwmDirectWriter
 	gobot.Commander
 	CurrentSpeed float64
 }
 
 // NewESCDriver creates a ESC driver given a servo writer and a pin.
-func NewESCDriver(a gpio.ServoWriter, name string, pin string) *ESCDriver {
+func NewESCDriver(a PwmDirectWriter, name string, pin string) *ESCDriver {
 	s := &ESCDriver{
 		name:         name,
 		connection:   a,
@@ -45,15 +49,18 @@ func (e *ESCDriver) Connection() gobot.Connection { return e.connection.(gobot.C
 func (e *ESCDriver) Start() (errs []error)        { return }
 func (e *ESCDriver) Halt() (errs []error)         { return }
 
-// Speed sets the speed for the ESC. Acceptable speeds are 0-10.0 mph.
+// Speed sets the speed for the ESC. Acceptable speeds are 0(stopped)-1.0(max) and are unitless.
 func (e *ESCDriver) Speed(speed float64) (err error) {
-	if speed < 0 || speed > maxSpeed {
+	if speed < 0 || speed > 1.0 {
 		return ErrSpeedOutOfRange
 	}
 	e.CurrentSpeed = speed
-	value := byte((speed / maxSpeed) * 180)
-	log.Printf("speed: %0.3fmph => %d", speed, value)
-	return e.connection.ServoWrite(e.Pin(), value)
+	// Calculate period and duty in ns
+	// TODO(ppg): allow configuration of these values
+	period := 20e6                            // (20ms)
+	duty := int(600e3 + speed*(1100e3-600e3)) // 600us min, 1100us max
+	log.Printf("speed: %0.3f => PwmDirectWrite(%d, %d) (%dus @ %dHz)", speed, int(period), duty/1e3, duty/1e3, int((1e9 / period)))
+	return e.connection.PwmDirectWrite(e.Pin(), int(period), duty)
 }
 
 //// CALIBRATION

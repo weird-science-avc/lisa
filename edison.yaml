@@ -1,0 +1,7 @@
+drivetrain:
+  steering:
+    type: edison
+    pin: '5'
+  speed:
+    type: edison
+    pin: '9'

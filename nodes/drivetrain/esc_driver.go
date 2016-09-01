@@ -5,28 +5,25 @@ import (
 	"log"
 
 	"github.com/hybridgroup/gobot"
+	"github.com/hybridgroup/gobot/platforms/gpio"
 )
 
 var ErrSpeedOutOfRange = errors.New("speed must be between 0.0 to 1.0")
-
-// An ESC requires the full range (mainly to 0) of PWM control:
-// - PwmWriter (Want 5%-10% duty cycle, limits us to about 12 steps of control)
-// - ServoWriter (0 doesn't map to 0 duty cycle)
-type PwmDirectWriter interface {
-	PwmDirectWrite(pin string, period, duty int) error
-}
 
 // ESCDriver represents a driver of an ESC (works like a Servo)
 type ESCDriver struct {
 	name       string
 	pin        string
-	connection PwmDirectWriter
+	connection gpio.PwmDirectWriter
 	gobot.Commander
 	CurrentSpeed float64
 }
 
-// NewESCDriver creates a ESC driver given a servo writer and a pin.
-func NewESCDriver(a PwmDirectWriter, name string, pin string) *ESCDriver {
+// NewESCDriver creates a ESC driver given a pwm direct writer and a pin.
+// An ESC requires the full range (mainly to 0) of PWM control:
+// - PwmWriter (Want 5%-10% duty cycle, limits us to about 12 steps of control)
+// - ServoWriter (0 doesn't map to 0 duty cycle)
+func NewESCDriver(a gpio.PwmDirectWriter, name string, pin string) *ESCDriver {
 	s := &ESCDriver{
 		name:         name,
 		connection:   a,

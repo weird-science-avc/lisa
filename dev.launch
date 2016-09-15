@@ -3,10 +3,12 @@
        and/or use arguments passed into roslaunch to control target env, simulations, etc. -->
   <!-- TODO(ppg): create a .launch file with just params for beaglebone to lock configuration there and run via systemd;
        run all other nodes via systemd directly when go eventually -->
-  <param name="/drivetrain/steering/type" type="string" value="beaglebone" />
-  <param name="/drivetrain/steering/pin" type="string" value="P8_13" />
-  <param name="/drivetrain/speed/type" type="string" value="beaglebone" />
-  <param name="/drivetrain/speed/pin" type="string" value="P8_19" />
+  <param name="/drivetrain/steering/type" type="string" value="firmata" />
+  <param name="/drivetrain/steering/port" type="string" value="/dev/cu.usbmodem1421" />
+  <param name="/drivetrain/steering/pin" type="string" value="3" />
+  <param name="/drivetrain/speed/type" type="string" value="firmata" />
+  <param name="/drivetrain/speed/port" type="string" value="/dev/cu.usbmodem1421" />
+  <param name="/drivetrain/speed/pin" type="string" value="10" />
 
   <node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 'map' 'lisa' 100" />
   <node name="localizer" pkg="lisa" type="localizer" />

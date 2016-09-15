@@ -8,6 +8,7 @@ import (
 	"github.com/hybridgroup/gobot/platforms/beaglebone"
 	"github.com/hybridgroup/gobot/platforms/firmata"
 	"github.com/hybridgroup/gobot/platforms/gpio"
+	"github.com/hybridgroup/gobot/platforms/intel-iot/edison"
 	// TODO(ppg): Move this to gopkg.in
 	"github.com/ppg/rosgo/msgs/std_msgs"
 	"github.com/ppg/rosgo/ros"
@@ -41,6 +42,7 @@ func main() {
 		panic(fmt.Sprintf("failed to get steering parameter: %s", err))
 	}
 	steeringConfig := pSteeringConfig.(map[string]interface{})
+
 	pSpeedConfig, err := node.GetParam("/drivetrain/speed")
 	if err != nil {
 		panic(fmt.Sprintf("failed to get speed parameter: %s", err))
@@ -57,6 +59,8 @@ func main() {
 		steeringWriter = findOrCreateFirmataAdaptor(robot, steeringConfig["port"].(string))
 	case "beaglebone":
 		steeringWriter = findOrCreateBeagleboneAdaptor(robot)
+	case "edison":
+		steeringWriter = findOrCreateEdisonAdaptor(robot)
 	default:
 		panic(fmt.Sprintf("Unrecognized steering device type: %s", steeringConfig["type"].(string)))
 	}
@@ -65,12 +69,14 @@ func main() {
 	var steering Steerer = steeringDriver
 
 	// Setup speed
-	var speedWriter gpio.ServoWriter
+	var speedWriter gpio.PwmDirectWriter
 	switch speedConfig["type"] {
 	case "firmata":
 		speedWriter = findOrCreateFirmataAdaptor(robot, speedConfig["port"].(string))
 	case "beaglebone":
 		speedWriter = findOrCreateBeagleboneAdaptor(robot)
+	case "edison":
+		speedWriter = findOrCreateEdisonAdaptor(robot)
 	default:
 		panic(fmt.Sprintf("Unrecognized speed device type: %s", speedConfig["type"]))
 	}
@@ -130,4 +136,14 @@ func findOrCreateBeagleboneAdaptor(robot *gobot.Robot) *beaglebone.BeagleboneAda
 		robot.AddConnection(beagleboneAdaptor)
 	}
 	return beagleboneAdaptor
+}
+
+var edisonAdaptor *edison.EdisonAdaptor
+
+func findOrCreateEdisonAdaptor(robot *gobot.Robot) *edison.EdisonAdaptor {
+	if edisonAdaptor == nil {
+		edisonAdaptor = edison.NewEdisonAdaptor("edison")
+		robot.AddConnection(edisonAdaptor)
+	}
+	return edisonAdaptor
 }

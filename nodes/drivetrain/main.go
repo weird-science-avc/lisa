@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/hybridgroup/gobot"
@@ -43,14 +42,12 @@ func main() {
 		panic(fmt.Sprintf("failed to get steering parameter: %s", err))
 	}
 	steeringConfig := pSteeringConfig.(map[string]interface{})
-	log.Printf("steeringConfig: %+v", steeringConfig)
 
 	pSpeedConfig, err := node.GetParam("/drivetrain/speed")
 	if err != nil {
 		panic(fmt.Sprintf("failed to get speed parameter: %s", err))
 	}
 	speedConfig := pSpeedConfig.(map[string]interface{})
-	log.Printf("speedConfig: %+v", speedConfig)
 
 	// Create a robot
 	robot := gobot.NewRobot("drivetrain")
@@ -108,7 +105,6 @@ func main() {
 	node.Logger().Info("subscribing to /lisa/cmd_velocity")
 	node.NewSubscriber("/lisa/cmd_velocity", std_msgs.MsgFloat64, func(msg *std_msgs.Float64) {
 		if err := speed.Speed(msg.Data); err != nil {
-			log.Printf("err: %+v", err)
 			node.Logger().Error(err.Error())
 		}
 	})

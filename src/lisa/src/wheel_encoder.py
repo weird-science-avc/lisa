@@ -13,8 +13,6 @@ encoder_pin = "P8_14"
 def publish_tick(pub):
     global tick_count
     tick_count += 1
-    hello_str = "hello world %s" % tick_count
-    rospy.loginfo(hello_str)
     pub.publish(tick_count)
 
 def wheel_encoder():
@@ -22,6 +20,7 @@ def wheel_encoder():
     pub = rospy.Publisher("lisa/sensors/wheel_encoder", UInt64, queue_size=10)
     #todo, register an interrupt here to get called when the hardware registers a wheel encoder
     #ros::Subscriber velocity_sub = n.subscribe("lisa/cmd_velocity", 1, velocityCmdCallback);
+    rospy.loginfo("Initializing Wheel encoder")
     rospy.init_node("wheel_encoder")
     #rate = rospy.Rate(10) # 10hz
     GPIO.setup(encoder_pin, GPIO.IN)
@@ -29,7 +28,9 @@ def wheel_encoder():
         #wait_for_edge is blocking.  I'm not sure how ros handles that.
         #This also has speed issues.  We could get an edge while publish_tick is processing. It might make sense to hack into the library and see if we can get lower level or switch to c++ if it has better support.
         #This also is going to kill ros shutdown
-        GPIO.wait_for_edge(encoder_pin, GPIO.RISING)
+        rospy.logdebug("Waiting for edge")
+        GPIO.wait_for_edge(encoder_pin, GPIO.BOTH)
+        rospy.logdebug("Rising edge detected")
         publish_tick(pub)
         #rate.sleep()
 

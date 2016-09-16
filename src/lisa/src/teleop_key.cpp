@@ -1,5 +1,5 @@
 // Based on: https://raw.githubusercontent.com/ros/ros_tutorials/42f2cce5f098654a03301ae5e05aa88963990d64/turtlesim/tutorials/teleop_turtle_key.cpp
-// Except changed to track velocity and publish changes, not commands; i.e. no
+// Except changed to track speed/steering and publish changes, not commands; i.e. no
 // new publish means last published Twist is still in effect.
 #include <ros/ros.h>
 #include <signal.h>
@@ -33,7 +33,7 @@ private:
   double speed, steering;
   double l_scale, a_scale;
   ros::Publisher steering_pub;
-  ros::Publisher velocity_pub;
+  ros::Publisher speed_pub;
 };
 
 int kfd = 0;
@@ -70,7 +70,7 @@ TeleopKey::TeleopKey() {
   node.param("scale_linear", l_scale, l_scale);
 
   steering_pub = node.advertise<std_msgs::Float64>("lisa/cmd_steering", 1, true);
-  velocity_pub = node.advertise<std_msgs::Float64>("lisa/cmd_velocity", 1, true);
+  speed_pub = node.advertise<std_msgs::Float64>("lisa/cmd_speed", 1, true);
 }
 
 void TeleopKey::keyLoop() {
@@ -140,7 +140,7 @@ void TeleopKey::keyLoop() {
       msg.data = steering;
       steering_pub.publish(msg);
       msg.data = speed;
-      velocity_pub.publish(msg);
+      speed_pub.publish(msg);
     }
   }
 

@@ -19,7 +19,7 @@ def wheel_encoder():
     global encoder_pin
     pub = rospy.Publisher("lisa/sensors/wheel_encoder", UInt64, queue_size=10)
     #todo, register an interrupt here to get called when the hardware registers a wheel encoder
-    #ros::Subscriber velocity_sub = n.subscribe("lisa/cmd_velocity", 1, velocityCmdCallback);
+    #ros::Subscriber speed_sub = n.subscribe("lisa/cmd_speed", 1, speedCmdCallback);
     rospy.loginfo("Initializing Wheel encoder")
     rospy.init_node("wheel_encoder")
     #rate = rospy.Rate(10) # 10hz
@@ -38,5 +38,5 @@ if __name__ == '__main__':
     try:
         wheel_encoder()
     except rospy.ROSInterruptException:
-        GPIO.cleanup() 
+        GPIO.cleanup()
         pass

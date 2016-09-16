@@ -30,6 +30,18 @@ type Speeder interface {
 	Speed(float64) error
 }
 
+// Beaglebone working PWM pins:
+//   P8_13
+//   P9_14
+//   P9_21
+//   P9_42
+// Not working
+//   P8_34
+//   P8_45
+//   P8_46
+//   P9_22
+//   P9_29
+
 func main() {
 	node := ros.NewNode("/drivetrain")
 	defer node.Shutdown()
@@ -94,6 +106,7 @@ func main() {
 		}
 		panic(strings.Join(msgs, ", "))
 	}
+	defer robot.Stop()
 
 	// Subscribe to lisa/cmd_steering and lisa/cmd_velocity
 	node.Logger().Info("subscribing to /lisa/cmd_steering")

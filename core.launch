@@ -16,5 +16,6 @@
 
   <!-- Swap in actual HW modules here as they're available -->
   <node name="imu_simulator" pkg="lisa" type="imu_simulator" />
-  <node name="wheel_encoder_simulator" pkg="lisa" type="wheel_encoder_simulator" />
+  <!-- <node name="wheel_encoder_simulator" pkg="lisa" type="wheel_encoder_simulator" /> -->
+  <node name="wheel_encoder" pkg="lisa" type="wheel_encoder" />
 </launch>

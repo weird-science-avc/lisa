@@ -64,9 +64,6 @@ def open_the_bay_doors():
     rospy.loginfo("starting /hal")
     rospy.init_node(DEFAULT_NODE_NAME)
     print("STARTED HAL NODE")
-    # read waypoint file param
-    course = load_course(DEFAULT_COURSE_MAP_PARAMETER)
-    print("LOADED COURSE")
 
     setup_hardware()
     button_state = 0
@@ -75,6 +72,8 @@ def open_the_bay_doors():
         new_state = GPIO.input("P8_12")
         if new_state == 1 and button_state == 0 and running_state == 0:
             running_state = 1
+            course = load_course(DEFAULT_COURSE_MAP_PARAMETER)
+            print("LOADED COURSE")
             print("CLEARING WAYPOINTS")
             clear_waypoints()
             print("PUBLISHING COURSE")

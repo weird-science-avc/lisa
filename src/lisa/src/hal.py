@@ -72,16 +72,16 @@ def open_the_bay_doors():
         new_state = GPIO.input("P8_12")
         if new_state == 1 and button_state == 0 and running_state == 0:
             running_state = 1
+            print("LOADING COURSE")
             course = load_course(DEFAULT_COURSE_MAP_PARAMETER)
-            print("LOADED COURSE")
             print("CLEARING WAYPOINTS")
             clear_waypoints()
+            print("SETTING INITIAL POSITION")
+            set_initial_position(initial_position_topic)
             print("PUBLISHING COURSE")
             publish_course(position_topic, course)
             print("RESTARTING WAYPOINTS")
             restart_waypoints()
-            print("SETTING INITIAL POSITION")
-            set_initial_position(initial_position_topic)
             print("STARTING NAVIGATION...")
             start_navigation()
         elif new_state == 1 and button_state == 0 and running_state == 1:

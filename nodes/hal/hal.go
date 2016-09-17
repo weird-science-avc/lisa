@@ -16,6 +16,7 @@ import (
 const (
 	clearWaypointsRPC         = "/waypoint_manager/clear"
 	resetWaypointsRPC         = "/waypoint_manager/reset"
+	startNavRPC               = "/navigator/start"
 	initialPoseTopic          = "initialpose"
 	poseTopic                 = "/move_base_simple/goal"
 	defaultCourseMapParameter = "/hal/map_location"
@@ -49,6 +50,7 @@ func (hal *Hal9000) Init() error {
 	hal.node.Logger().Info("starting /hal")
 	hal.rpcCalls["clearWaypoints"] = hal.node.NewServiceClient(clearWaypointsRPC, std_srvs.SrvEmpty)
 	hal.rpcCalls["resetWaypoints"] = hal.node.NewServiceClient(resetWaypointsRPC, std_srvs.SrvEmpty)
+	hal.rpcCalls["startNavigation"] = hal.node.NewServiceClient(startNavRPC, std_srvs.SrvEmpty)
 
 	hal.initialPositionTopic = hal.node.NewPublisherWithCallbacks(initialPoseTopic, geometry_msgs.MsgPoseWithCovarianceStamped,
 		func(ros.SingleSubscriberPublisher) {
@@ -82,11 +84,20 @@ func (hal *Hal9000) shutdownRPC() {
 	}
 }
 
-func (hal *Hal9000) ResetWaypoints() {
+func (hal *Hal9000) Clear() {
 	hal.rpcCalls["clearWaypoints"].Call(&std_srvs.Empty{})
-	hal.rpcCalls["resetWaypoints"].Call(&std_srvs.Empty{})
+}
 
+func (hal *Hal9000) CalibrateInitialPosition() {
 	hal.initialPositionTopic.Publish(zeroZeroCoordinate)
+}
+
+func (hal *Hal9000) Reset() {
+	hal.rpcCalls["resetWaypoints"].Call(&std_srvs.Empty{})
+}
+
+func (hal *Hal9000) Start() {
+	hal.rpcCalls["startNavigation"].Call(&std_srvs.Empty{})
 }
 
 func (hal *Hal9000) LoadCourse(courseMapParameter string) error {
@@ -157,6 +168,16 @@ func (hal *Hal9000) PublishCourse() error {
 	return nil
 }
 
+func (hal *Hal9000) StartNavigation() error {
+	for _, waypoint := range hal.course {
+		err := hal.PublishWaypoint(waypoint)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func main() {
 	selfAware := NewHal9000()
 
@@ -172,9 +193,12 @@ func main() {
 		panic(fmt.Sprintf("Error loading course map: %s", err))
 	}
 
-	selfAware.ResetWaypoints()
+	selfAware.Clear()
 	err = selfAware.PublishCourse()
 	if err != nil {
 		selfAware.node.Logger().Errorf("Error publishing course: %s", err)
 	}
+	selfAware.Reset()
+	selfAware.CalibrateInitialPosition()
+	selfAware.Start()
 }

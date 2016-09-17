@@ -168,14 +168,8 @@ func (hal *Hal9000) PublishCourse() error {
 	return nil
 }
 
-func (hal *Hal9000) StartNavigation() error {
-	for _, waypoint := range hal.course {
-		err := hal.PublishWaypoint(waypoint)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (hal *Hal9000) StartNavigation() {
+	hal.rpcCalls["startNavigation"].Call(&std_srvs.Empty{})
 }
 
 func main() {

@@ -9,14 +9,15 @@
   <param name="/drivetrain/speed/pin" type="string" value="P9_14" />
   <param name="/sensors/wheel_encoder/type" type="string" value="beaglebone" />
   <param name="/sensors/wheel_encoder/pin" type="string" value="P9_14" />
+  <param name="/hal/map_location" type="string" value="/root/weird_science/waypoints.json" />
 
   <node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 'map' 'lisa' 100" />
-  <node name="localizer" pkg="lisa" type="localizer" />
+  <node name="localizer" pkg="lisa" type="localizer" output="screen"/>
   <!-- TODO(ppg): enable when python works with catkin_make -->
   <!-- <node name="wheel_encoder" pkg="lisa" type="wheel_encoder" /> -->
 
-  <node name="navigator" pkg="lisa" type="navigator" />
-  <node name="waypoint_manager" pkg="lisa" type="waypoint_manager" />
+  <node name="navigator" pkg="lisa" type="navigator" output="screen"/>
+  <node name="waypoint_manager" pkg="lisa" type="waypoint_manager" output="screen"/>
   <!-- <node name="occupancy_map" pkg="lisa" type="occupancy_map" /> -->
 
   <!-- Simulation -->

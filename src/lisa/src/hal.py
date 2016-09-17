@@ -6,6 +6,7 @@ import time
 import rospy
 import geometry_msgs.msg
 import std_srvs.srv
+from Adafruit_BBIO import GPIO
 
 CLEAR_WAYPOINTS_RPC = "/waypoint_manager/clear"
 RESTART_WAYPOINTS_RPC = "/waypoint_manager/restart"
@@ -45,6 +46,10 @@ def set_initial_position(topic):
     topic.publish(msg)
 
 
+def setup_hardware():
+    GPIO.setup("P8_12", GPIO.IN)
+
+
 def open_the_bay_doors():
     initial_position_topic = rospy.Publisher(INITIAL_POSE_TOPIC,
         geometry_msgs.msg.PoseWithCovarianceStamped, queue_size=10)
@@ -60,18 +65,23 @@ def open_the_bay_doors():
     # read waypoint file param
     course = load_course(DEFAULT_COURSE_MAP_PARAMETER)
     print("LOADED COURSE")
-    clear_waypoints()
-    print("CLEARED WAYPOINTS")
-    publish_course(position_topic, course)
-    print("PUBLISHED COURSE")
-    restart_waypoints()
-    print("RESTARTED WAYPOINTS")
-    set_initial_position(initial_position_topic)
-    print("SET INITIAL POSITION")
-    print("STARTING NAVIGATION...")
-    start_navigation()
+
+    setup_hardware()
+    button_state = 0
     while not rospy.is_shutdown():
-        pass
+        new_state = GPIO.input("P8_12")
+        if new_state == 1 and button_state == 0:
+            print("CLEARING WAYPOINTS")
+            clear_waypoints()
+            print("PUBLISHING COURSE")
+            publish_course(position_topic, course)
+            print("RESTARTING WAYPOINTS")
+            restart_waypoints()
+            print("SETTING INITIAL POSITION")
+            set_initial_position(initial_position_topic)
+            print("STARTING NAVIGATION...")
+            start_navigation()
+        button_state = new_state
 
 if __name__ == '__main__':
     open_the_bay_doors()

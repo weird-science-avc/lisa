@@ -41,9 +41,10 @@ def imu():
     	print "Serial is open!"
     
     while not rospy.is_shutdown():
-	ser.flushInput()
-        v = ser.read(58)
-        publish_orientation(v)
+	    ser.flushInput()
+        str = ser.read(116)
+        imu_output = str.split('\n')[-2]
+        publish_orientation(imu_output)
         rate.sleep()
 
     ser.close()

@@ -29,11 +29,12 @@ def publish_orientation(v):
 def imu():
     # pub = rospy.Publisher("lisa/sensors/imu", Imu, queue_size=10)
     times_per_second = 10
+    bytes_to_read = 130  #This is slightly over twice the length of a single line of data.  A single line is ~58 characters.
+    
     rospy.loginfo("Initializing IMU")
     rospy.init_node("imu")
     rate = rospy.Rate(times_per_second) # 10hz
     UART.setup("UART1")
-     
     ser = serial.Serial(port = "/dev/ttyO1", baudrate=115200 )
     ser.close()
     ser.open()
@@ -41,10 +42,11 @@ def imu():
     	print "Serial is open!"
     
     while not rospy.is_shutdown():
-	    ser.flushInput()
-        str = ser.read(116)
-        imu_output = str.split('\n')[-2]
-        publish_orientation(imu_output)
+	    ser.flushInput() #The imu blasts us with data and fills up the serial input buffer.  We clear it out here to wait for new values
+        stream = ser.read(bytes_to_read) 
+        full_orientation = stream.split('\n')[-2] #Since we're getting a stream of data, we don't know whether we're starting at the beginning of the line or the middle. This throws out the last partial line and gets the previous full line
+        yaw = full_orientation.split(' ')[-1] #The last value is the yaw
+        publish_orientation(yaw)
         rate.sleep()
 
     ser.close()

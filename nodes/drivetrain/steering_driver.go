@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"log"
+	"math"
 
 	"github.com/hybridgroup/gobot"
 	"github.com/hybridgroup/gobot/platforms/gpio"
@@ -10,7 +11,20 @@ import (
 
 // TODO(ppg): consider renaming to AckermanDriver
 
-var ErrSteeringOutOfRange = errors.New("steering must be between -1.0 to 1.0")
+const (
+	// Found by experimentation, and deviation is
+	//steeringServoMin    = 40 // limit
+	//steeringServoMax    = 125 // limit
+	steeringServoCenter = 82
+	steeringServoMin    = 50  // backed off some
+	steeringServoMax    = 115 // backed off some
+)
+
+var (
+	steeringServoRange = byte(math.Min(steeringServoMax-steeringServoCenter, steeringServoCenter-steeringServoMin))
+
+	ErrSteeringOutOfRange = errors.New("steering must be between -1.0 to 1.0")
+)
 
 // SteeringDriver represents a driver of an ESC (works like a Servo)
 type SteeringDriver struct {
@@ -52,9 +66,8 @@ func (s *SteeringDriver) Steer(steering float64) (err error) {
 	}
 	s.CurrentSteering = steering
 
-	// Calculate steering (90 is center)
-	// TODO(ppg): allow configuration of these values
-	value := byte(90.0 + steering*30.0)
+	// Calculate steering based on center offset for range
+	value := byte(float64(steeringServoCenter) + float64(steeringServoRange)*steering)
 	log.Printf("steering: %0.3f => ServoWrite(%d)", steering, value)
 	return s.connection.ServoWrite(s.Pin(), value)
 }

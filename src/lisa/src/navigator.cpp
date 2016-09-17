@@ -12,8 +12,8 @@
 
 #define APPROACH_DELTA 1.0 // m
 
-#define LOW_VELOCITY 1.0 // m/s
-#define HIGH_VELOCITY 3.5 // m/s
+#define LOW_SPEED 0.3 // 0=stopped, 1=max
+#define HIGH_SPEED 0.5 // 0=stopped, 1=max
 
 geometry_msgs::Pose g_pose, g_goal;
 bool g_started;
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
   // Setup publishers:
   ros::Publisher steering_pub = n.advertise<std_msgs::Float64>("lisa/cmd_steering", 1, true);
-  ros::Publisher velocity_pub = n.advertise<std_msgs::Float64>("lisa/cmd_velocity", 1, true);
+  ros::Publisher speed_pub = n.advertise<std_msgs::Float64>("lisa/cmd_speed", 1, true);
 
   // Setup subscribers:
   ros::Subscriber pose_sub = n.subscribe("/lisa/pose", 1, poseCallback);
@@ -60,12 +60,12 @@ int main(int argc, char **argv)
 
   // Loop variables
   double last_steering = 0.0;
-  double last_velocity = 0.0;
+  double last_speed = 0.0;
   ros::Rate loop_rate(10); // Hz
   while (ros::ok()) {
-    // Get velocity and steering based on started or stopped
+    // Get speed and steering based on started or stopped
     double steering = 0.0;
-    double velocity = 0.0;
+    double speed = 0.0;
     if (g_started) {
       // get a vector from the current pose to our goal (and distance)
       // TODO: Aren't there helpers for constructing the vector and getting distance, etc.?
@@ -83,8 +83,8 @@ int main(int argc, char **argv)
       ROS_DEBUG("NAVIGATION: v=(%0.3f,%0.3f), dist=%0.3f, yaw=%0.3f, yaw_delta=%0.3f",
           v.x, v.y, d, yaw, yaw_delta);
 
-      // Discrete velocity m/s
-      velocity = (d > APPROACH_DELTA) ?  HIGH_VELOCITY : LOW_VELOCITY;
+      // Discrete speed
+      speed = (d > APPROACH_DELTA) ?  HIGH_SPEED : LOW_SPEED;
 
       // Continuous steering [-1.0, 1.0] unitless
       steering = yaw_delta / PI;
@@ -97,16 +97,16 @@ int main(int argc, char **argv)
       steering_pub.publish(msg);
       ROS_INFO("NAVIGATION: steering=%0.3f", steering);
     }
-    if (velocity != last_velocity) {
+    if (speed != last_speed) {
       std_msgs::Float64 msg;
-      msg.data = velocity;
-      velocity_pub.publish(msg);
-      ROS_INFO("NAVIGATION: velocity=%0.3f", velocity);
+      msg.data = speed;
+      speed_pub.publish(msg);
+      ROS_INFO("NAVIGATION: speed=%0.3f", speed);
     }
 
     // Loop variable
     last_steering = steering;
-    last_velocity = velocity;
+    last_speed = speed;
 
     ros::spinOnce();
     loop_rate.sleep();

@@ -6,16 +6,20 @@
   <param name="/drivetrain/steering/type" type="string" value="beaglebone" />
   <param name="/drivetrain/steering/pin" type="string" value="P8_13" />
   <param name="/drivetrain/speed/type" type="string" value="beaglebone" />
-  <param name="/drivetrain/speed/pin" type="string" value="P8_19" />
+  <param name="/drivetrain/speed/pin" type="string" value="P9_14" />
+  <param name="/sensors/wheel_encoder/type" type="string" value="beaglebone" />
+  <param name="/sensors/wheel_encoder/pin" type="string" value="P9_14" />
 
   <node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 'map' 'lisa' 100" />
   <node name="localizer" pkg="lisa" type="localizer" />
+  <!-- TODO(ppg): enable when python works with catkin_make -->
+  <!-- <node name="wheel_encoder" pkg="lisa" type="wheel_encoder" /> -->
+
   <node name="navigator" pkg="lisa" type="navigator" />
   <node name="waypoint_manager" pkg="lisa" type="waypoint_manager" />
-  <node name="occupancy_map" pkg="lisa" type="occupancy_map" />
+  <!-- <node name="occupancy_map" pkg="lisa" type="occupancy_map" /> -->
 
-  <!-- Swap in actual HW modules here as they're available -->
+  <!-- Simulation -->
   <node name="imu_simulator" pkg="lisa" type="imu_simulator" />
   <!-- <node name="wheel_encoder_simulator" pkg="lisa" type="wheel_encoder_simulator" /> -->
-  <node name="wheel_encoder" pkg="lisa" type="wheel_encoder" />
 </launch>

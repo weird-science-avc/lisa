@@ -2,7 +2,7 @@
 # license removed for brevity
 import rospy
 import serial
-from sensor_msgs import Imu
+#from sensor_msgs import Imu
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.UART as UART
 
@@ -23,27 +23,28 @@ orientation = ""  #This will need changed to the actual message
 
 def publish_orientation(v):
     global orientation
-    rospy.loginfo("imu value")
     rospy.loginfo(v)
     # pub.publish(tick_count)
 
 def imu():
     # pub = rospy.Publisher("lisa/sensors/imu", Imu, queue_size=10)
-    
+    times_per_second = 10
     rospy.loginfo("Initializing IMU")
     rospy.init_node("imu")
-    rate = rospy.Rate(10) # 10hz
-    UART.setup("UART5")
+    rate = rospy.Rate(times_per_second) # 10hz
+    UART.setup("UART1")
      
-    ser = serial.Serial(port = "/dev/ttyO5", baudrate=115200, timeout=0)
+    ser = serial.Serial(port = "/dev/ttyO1", baudrate=115200 )
     ser.close()
     ser.open()
     if ser.isOpen():
     	print "Serial is open!"
     
     while not rospy.is_shutdown():
-        v = ser.read(200)
-        publish_orientation(v)
+	    ser.flushInput()
+        str = ser.read(116)
+        imu_output = str.split('\n')[-2]
+        publish_orientation(imu_output)
         rate.sleep()
 
     ser.close()

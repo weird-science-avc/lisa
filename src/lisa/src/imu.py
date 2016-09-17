@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # license removed for brevity
-import rospy
+import rospy, tf
 import serial
-#from sensor_msgs import Imu
+import re
+import math
+from sensor_msgs.msg import Imu
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.UART as UART
-
 
  
 # msg = Imu()
@@ -21,30 +22,39 @@ import Adafruit_BBIO.UART as UART
 
 orientation = ""  #This will need changed to the actual message
 
-def publish_orientation(v):
+def publish_orientation(pub, v):
     global orientation
-    rospy.loginfo(v)
-    # pub.publish(tick_count)
+    pub.publish(v)
 
 def imu():
-    # pub = rospy.Publisher("lisa/sensors/imu", Imu, queue_size=10)
-    times_per_second = 10
+    pub = rospy.Publisher("lisa/sensors/imu", Imu, queue_size=10)
+    times_per_second = 5
+    bytes_to_read = 130  #This is slightly over twice the length of a single line of data.  A single line is ~58 characters.
+    
     rospy.loginfo("Initializing IMU")
     rospy.init_node("imu")
     rate = rospy.Rate(times_per_second) # 10hz
     UART.setup("UART1")
-     
-    ser = serial.Serial(port = "/dev/ttyO1", baudrate=115200 )
-    ser.close()
+    ser = serial.Serial(port = "/dev/ttyO1", baudrate=115200)
+    ser.close() 
     ser.open()
     if ser.isOpen():
     	print "Serial is open!"
     
     while not rospy.is_shutdown():
-	    ser.flushInput()
-        str = ser.read(116)
-        imu_output = str.split('\n')[-2]
-        publish_orientation(imu_output)
+	ser.flushInput() #The imu blasts us with data and fills up the serial input buffer.  We clear it out here to wait for new values
+        stream = ser.read(bytes_to_read) 
+        full_orientation = stream.split('\n')[-2] #Since we're getting a stream of data, we don't know whether we're starting at the beginning of the line or the middle. This throws out the last partial line and gets the previous full line
+	yaw_deg = float(re.split('\s*', full_orientation)[-2])
+	rospy.loginfo("yaw=%0.3f", yaw_deg)
+	yaw = yaw_deg * math.pi / 180.0
+	q = tf.transformations.quaternion_from_euler(0, 0, yaw)
+	o = Imu()
+	o.orientation.x = q[0]
+	o.orientation.y = q[1]
+	o.orientation.z = q[2]
+	o.orientation.w = q[3]
+        publish_orientation(pub, o)
         rate.sleep()
 
     ser.close()
@@ -58,20 +68,3 @@ if __name__ == '__main__':
         #UART.cleanup()
         pass
 
-
-
-# void serialEvent() {
-#   if (!MOCK_IMU) {
-#     float roll = Serial.parseFloat();
-#     float pitch = Serial.parseFloat();
-#     float yaw = Serial.parseFloat();
-#     char garbage[20];
-#     Serial.readBytesUntil('\0', garbage, 20);
-#     //Serial.print("gYaw: ");
-#     //Serial.println(gYaw);
-#     // NOTE: Sometimes the IMU spikes changes so limit the size we believe for a given fast loop rad
-#     //if (abs(yaw - gYaw) < IMU_MAX_DELTA_DEGREES) {
-#       gYaw = yaw;
-#     //}
-#   }
-# }

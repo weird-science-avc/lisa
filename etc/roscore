@@ -1,0 +1,16 @@
+CMAKE_PREFIX_PATH=/opt/ros/indigo
+#CMAKE_PREFIX_PATH=/root/weird_science/devel:/opt/ros/indigo
+LANG=en_US.UTF-8
+LD_LIBRARY_PATH=/root/weird_science/devel/lib/arm-linux-gnueabihf:/opt/ros/indigo/lib/arm-linux-gnueabihf:/root/weird_science/devel/lib:/opt/ros/indigo/lib
+PATH=/root/weird_science/devel/bin:/opt/ros/indigo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PKG_CONFIG_PATH=/root/weird_science/devel/lib/arm-linux-gnueabihf/pkgconfig:/opt/ros/indigo/lib/arm-linux-gnueabihf/pkgconfig:/root/weird_science/devel/lib/pkgconfig:/opt/ros/indigo/lib/pkgconfig
+PYTHONPATH=/opt/ros/indigo/lib/python2.7/dist-packages
+#PYTHONPATH=/root/weird_science/devel/lib/python2.7/dist-packages:/opt/ros/indigo/lib/python2.7/dist-packages
+ROS_DISTRO=indigo
+ROS_ETC_DIR=/opt/ros/indigo/etc/ros
+ROS_IP=192.168.7.2
+ROS_PORT=11311
+ROS_MASTER_URI=http://localhost:11311
+ROS_PACKAGE_PATH=/root/weird_science/src:/opt/ros/indigo/share:/opt/ros/indigo/stacks
+ROS_ROOT=/opt/ros/indigo/share/ros
+ROSCONSOLE_CONFIG_FILE=/root/weird_science/.rosconfig

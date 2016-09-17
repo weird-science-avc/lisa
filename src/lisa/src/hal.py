@@ -7,7 +7,7 @@ import geometry_msgs.msg
 import std_srvs.srv
 
 CLEAR_WAYPOINTS_RPC = "/waypoint_manager/clear"
-RESET_WAYPOINTS_RPC = "/waypoint_manager/restart"
+RESTART_WAYPOINTS_RPC = "/waypoint_manager/restart"
 START_NAV_RPC = "/navigator/start"
 INITIAL_POSE_TOPIC = "initialpose"
 POSE_TOPIC = "/move_base_simple/goal"
@@ -26,6 +26,7 @@ def publish_waypoint(topic, waypoint):
     msg = geometry_msgs.msg.PoseStamped()
     msg.pose.position.x = waypoint['x']
     msg.pose.position.y = waypoint['y']
+    print("PUBLISHING: ", waypoint)
     topic.publish(msg)
 
 
@@ -48,18 +49,24 @@ def open_the_bay_doors():
     position_topic = rospy.Publisher(POSE_TOPIC,
         geometry_msgs.msg.PoseStamped, queue_size=10)
     clear_waypoints = rospy.ServiceProxy(CLEAR_WAYPOINTS_RPC, std_srvs.srv.Empty)
-    reset_waypoints = rospy.ServiceProxy(RESET_WAYPOINTS_RPC, std_srvs.srv.Empty)
+    restart_waypoints = rospy.ServiceProxy(RESTART_WAYPOINTS_RPC, std_srvs.srv.Empty)
     start_navigation = rospy.ServiceProxy(START_NAV_RPC, std_srvs.srv.Empty)
 
     rospy.loginfo("starting /hal")
     rospy.init_node(DEFAULT_NODE_NAME)
-
+    print("STARTED HAL NODE")
     # read waypoint file param
     course = load_course(DEFAULT_COURSE_MAP_PARAMETER)
+    print("LOADED COURSE")
     clear_waypoints()
+    print("CLEARED WAYPOINTS")
     publish_course(position_topic, course)
-    reset_waypoints()
+    print("PUBLISHING COURSE")
+    restart_waypoints()
+    print("RESTARTED WAYPOINTS")
     set_initial_position(initial_position_topic)
+    print("SET INITIAL POSITION")
+    print("STARTING NAVIGATION...")
     start_navigation()
 
 if __name__ == '__main__':

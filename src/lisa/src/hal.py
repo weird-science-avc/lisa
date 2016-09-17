@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # license removed for brevity
-import json
-import time
+import yaml
 
 import rospy
 import geometry_msgs.msg
@@ -21,7 +20,7 @@ DEFAULT_NODE_NAME = "hal9000"
 def load_course(parameter):
     file_location = rospy.get_param(parameter, "/root/weird_science/waypoints.json")
     with open(file_location, 'r') as f:
-        yolo = json.loads(f.read())
+        yolo = yaml.safe_load(f.read())
         return yolo.get("waypoints", [])
 
 

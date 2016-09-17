@@ -1,0 +1,7 @@
+waypoints:
+- { x: 125, y: 0,    tolerance: 3.0 }
+- { x: 125, y: -45,  tolerance: 3.0 }
+- { x: 63,  y: -45,  tolerance: 3.0 }
+- { x: 63,  y: -113, tolerance: 3.0 }
+- { x: -5,  y: -113, tolerance: 3.0 }
+- { x: -5,  y: 5,    tolerance: 3.0 }

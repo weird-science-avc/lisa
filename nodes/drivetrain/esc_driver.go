@@ -57,8 +57,12 @@ func (e *ESCDriver) Name() string { return e.name }
 func (e *ESCDriver) Pin() string  { return e.pin }
 
 func (e *ESCDriver) Connection() gobot.Connection { return e.connection.(gobot.Connection) }
-func (e *ESCDriver) Start() (errs []error)        { return }
-func (e *ESCDriver) Halt() (errs []error)         { return }
+func (e *ESCDriver) Start() (errs []error) {
+	// On start write out speedDutyStopped to stop motor
+	log.Printf("speed: stopped => PwmDirectWrite(%d, %d) (%dus @ %0.1fHz)", int(speedPeriod), int(speedDutyStopped), int(speedDutyStopped/1e3), (1e9 / speedPeriod))
+	return []error{e.connection.PwmDirectWrite(e.Pin(), speedPeriod, speedDutyStopped)}
+}
+func (e *ESCDriver) Halt() (errs []error) { return }
 
 // Speed sets the speed for the ESC. Acceptable speeds are 0(stopped)-1.0(max) and are unitless.
 func (e *ESCDriver) Speed(speed float64) (err error) {

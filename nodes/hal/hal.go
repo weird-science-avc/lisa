@@ -47,6 +47,7 @@ func NewHal9000() *Hal9000 {
 
 func (hal *Hal9000) Init() error {
 	hal.node = ros.NewNode(defaultNodeName)
+	hal.node.Logger().SetSeverity(ros.LogLevelDebug)
 	hal.node.Logger().Info("starting /hal")
 	hal.rpcCalls["clearWaypoints"] = hal.node.NewServiceClient(clearWaypointsRPC, std_srvs.SrvEmpty)
 	hal.rpcCalls["resetWaypoints"] = hal.node.NewServiceClient(resetWaypointsRPC, std_srvs.SrvEmpty)

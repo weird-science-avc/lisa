@@ -3,9 +3,23 @@ package main
 import (
 	"errors"
 	"log"
+	"math"
 
 	"github.com/hybridgroup/gobot"
 	"github.com/hybridgroup/gobot/platforms/gpio"
+)
+
+const (
+	// Found by experimentation; values in nanoseconds
+	//speedDutyArmMin       = 600e3 // limit
+	//speedDutyStartMoving  = 725e3 // limit
+
+	speedDutyStopped = 650e3
+	speedDutyMin     = 800e3
+	speedDutyMax     = 850e3
+
+	// 20ms fixed by ESC
+	speedPeriod = 20e6
 )
 
 var ErrSpeedOutOfRange = errors.New("speed must be between 0.0 to 1.0")
@@ -52,31 +66,13 @@ func (e *ESCDriver) Speed(speed float64) (err error) {
 		return ErrSpeedOutOfRange
 	}
 	e.CurrentSpeed = speed
-	// Calculate period and duty in ns
-	// TODO(ppg): allow configuration of these values
-	period := 20e6                            // (20ms)
-	duty := int(600e3 + speed*(1100e3-600e3)) // 600us min, 1100us max
-	log.Printf("speed: %0.3f => PwmDirectWrite(%d, %d) (%dus @ %dHz)", speed, int(period), duty/1e3, duty/1e3, int((1e9 / period)))
-	return e.connection.PwmDirectWrite(e.Pin(), int(period), duty)
-}
 
-//// CALIBRATION
-//
-//const SpeedMinServo = 660  // slowest non-zero
-//const SpeedMaxServo = 1080 // fastest non-zero
-//
-//const SpeedMServoFromVelocity = 95.964
-//const SpeedBServoFromVelocity = 659.19
-//
-//const SpeedStoppedServo = 0
-//
-//// NOTE: We can directly set velocity and servo instead of curve evaluation if we like
-//const SpeedLowVelocity = 1.0
-//
-//var SpeedLowServo = byte(math.Max(math.Min(SpeedMServoFromVelocity*SpeedLowVelocity+SpeedBServoFromVelocity, SpeedMaxServo), SpeedMinServo))
-//
-//// NOTE(ppg): If you bump up the top speed you should also make it do updates in the main loop faster or allow more IMU angle variation, otherwise we turn to fast to track
-//const SpeedHighVelocity = 3.5
-//
-//// SpeedHighServo is the maximum value for the ESC servo.
-//var SpeedHighServo = byte(math.Max(math.Min(SpeedMServoFromVelocity*SpeedHighVelocity+SpeedBServoFromVelocity, SpeedMaxServo), SpeedMinServo))
+	// Calculate period and duty in ns
+	duty := int(math.Floor(speedDutyMin + (speedDutyMax-speedDutyMin)*speed))
+	// If we're at 0, really put us at our stopped duty
+	if speed == 0 {
+		duty = speedDutyStopped
+	}
+	log.Printf("speed: %0.3f => PwmDirectWrite(%d, %d) (%dus @ %0.1fHz)", speed, int(speedPeriod), int(duty), int(duty/1e3), (1e9 / speedPeriod))
+	return e.connection.PwmDirectWrite(e.Pin(), speedPeriod, duty)
+}

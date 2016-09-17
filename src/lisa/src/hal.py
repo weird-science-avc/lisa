@@ -31,7 +31,6 @@ def publish_waypoint(topic, waypoint):
     msg.pose.position.y = waypoint['y']
     print("PUBLISHING: ", waypoint)
     topic.publish(msg)
-    time.sleep(1)
 
 
 def publish_course(topic, course):

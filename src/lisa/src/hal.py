@@ -7,7 +7,7 @@ import geometry_msgs.msg
 import std_srvs.srv
 
 CLEAR_WAYPOINTS_RPC = "/waypoint_manager/clear"
-RESET_WAYPOINTS_RPC = "/waypoint_manager/reset"
+RESET_WAYPOINTS_RPC = "/waypoint_manager/restart"
 START_NAV_RPC = "/navigator/start"
 INITIAL_POSE_TOPIC = "initialpose"
 POSE_TOPIC = "/move_base_simple/goal"

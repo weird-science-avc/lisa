@@ -15,7 +15,7 @@ import (
 
 const (
 	clearWaypointsRPC         = "/waypoint_manager/clear"
-	resetWaypointsRPC         = "/waypoint_manager/reset"
+	resetWaypointsRPC         = "/waypoint_manager/restart"
 	startNavRPC               = "/navigator/start"
 	initialPoseTopic          = "initialpose"
 	poseTopic                 = "/move_base_simple/goal"

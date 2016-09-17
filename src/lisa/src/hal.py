@@ -5,7 +5,6 @@ import json
 import rospy
 import geometry_msgs.msg
 import std_srvs.srv
-from std_msgs.msg import UInt64
 
 CLEAR_WAYPOINTS_RPC = "/waypoint_manager/clear"
 RESET_WAYPOINTS_RPC = "/waypoint_manager/reset"
@@ -44,8 +43,10 @@ def set_initial_position(topic):
 
 
 def open_the_bay_doors():
-    initial_position_topic = rospy.Publisher(INITIAL_POSE_TOPIC, UInt64, queue_size=10)
-    position_topic = rospy.Publisher(INITIAL_POSE_TOPIC, UInt64, queue_size=10)
+    initial_position_topic = rospy.Publisher(INITIAL_POSE_TOPIC,
+        geometry_msgs.msg.PoseWithCovarianceStamped, queue_size=10)
+    position_topic = rospy.Publisher(INITIAL_POSE_TOPIC,
+        geometry_msgs.msg.PoseWithCovarianceStamped, queue_size=10)
     clear_waypoints = rospy.ServiceProxy(CLEAR_WAYPOINTS_RPC, std_srvs.srv.Empty)
     reset_waypoints = rospy.ServiceProxy(RESET_WAYPOINTS_RPC, std_srvs.srv.Empty)
     start_navigation = rospy.ServiceProxy(START_NAV_RPC, std_srvs.srv.Empty)

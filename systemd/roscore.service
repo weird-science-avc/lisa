@@ -1,0 +1,15 @@
+[Unit]
+Description=Launcher for the ROS master, parameter server and rosout logging node
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/default/roscore
+ExecStartPre=/bin/touch /opt/ros/indigo/bin/.catkin
+ExecStart=/opt/ros/indigo/bin/roscore -p $ROS_PORT
+WorkingDirectory=/root/weird_science
+Restart=on-abort
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

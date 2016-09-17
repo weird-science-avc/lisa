@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	// TODO(ppg): Move this to gopkg.in
 	"github.com/ppg/rosgo/msgs/geometry_msgs"
@@ -192,4 +193,5 @@ func main() {
 	selfAware.Reset()
 	selfAware.CalibrateInitialPosition()
 	selfAware.Start()
+	time.Sleep(20 * time.Second)
 }

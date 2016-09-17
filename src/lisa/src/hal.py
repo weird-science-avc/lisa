@@ -41,7 +41,7 @@ def set_initial_position(topic):
     msg = geometry_msgs.msg.PoseWithCovarianceStamped()
     msg.pose.pose.position.x = 0.0
     msg.pose.pose.position.y = 0.0
-    msg.pose.pose.orientation.w = 0.0
+    msg.pose.pose.orientation.w = 1.0
     topic.publish(msg)
 
 
@@ -70,6 +70,8 @@ def open_the_bay_doors():
     print("SET INITIAL POSITION")
     print("STARTING NAVIGATION...")
     start_navigation()
+    while not rospy.is_shutdown():
+        pass
 
 if __name__ == '__main__':
     open_the_bay_doors()

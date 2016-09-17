@@ -4,7 +4,8 @@
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/Marker.h>
 
-#define TOLERANCE 5.0
+#define DEFAULT_TOLERANCE 3.0
+double g_tolerance = DEFAULT_TOLERANCE;
 
 ros::Publisher g_marker_pub;
 ros::Publisher g_goal_pub;
@@ -25,9 +26,9 @@ void publishMarker() {
   marker.type = visualization_msgs::Marker::SPHERE_LIST;
   marker.action = visualization_msgs::Marker::ADD;
 
-  marker.scale.x = TOLERANCE;
-  marker.scale.y = TOLERANCE;
-  marker.scale.z = TOLERANCE;
+  marker.scale.x = g_tolerance;
+  marker.scale.y = g_tolerance;
+  marker.scale.z = g_tolerance;
 
   marker.color.a = 1.0;
   marker.color.r = 1.0;
@@ -159,7 +160,7 @@ void poseCallback(const geometry_msgs::PoseStamped& msg) {
       msg.pose.position.x, msg.pose.position.y, g0.position.x, g0.position.y, d0);
 
   // decide if we've arrived at it
-  if (d0 < TOLERANCE) { // Arrived at this goal
+  if (d0 < g_tolerance) { // Arrived at this goal
     dirty = true;
     g_goal_statuses[g_goals_index] = 1;
     ROS_INFO("FINISHED WAYPOINT %d: (%0.3f,%0.3f)", g_goals_index, g0.position.x, g0.position.y);
@@ -228,6 +229,10 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "waypoint_manager");
   ROS_INFO("waypoint_manager started");
   ros::NodeHandle n;
+
+  // FIXME(ppg): get g_tolerance from /waypoint_manager/tolerance
+  //// Get parameters
+  //ros::param::param<float>("/waypoint_manager/tolerance", g_tolerance, DEFAULT_TOLERANCE);
 
   // Setup publishers:
   // - visualization publisher

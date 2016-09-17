@@ -11,6 +11,8 @@
 #define PI 3.14159265
 #define WHEEL_ENCODER_M_DISTANCE_FROM_TICKS 0.0544737
 
+#define MIN_PUBLISH_RATE 0.2 // seconds
+
 // Global vars for storing wheel encoder and yaw
 float g_yaw = 0.0;
 unsigned int g_wheel_encoder_ticks = 0;
@@ -97,6 +99,7 @@ int main(int argc, char **argv) {
   // Track loop states
   float last_yaw = 0.0;
   int last_wheel_encoder_ticks = 0;
+  ros::Time last_publish = ros::Time::now();
 
   ros::Rate loop_rate(10); // Hz
   while (ros::ok())
@@ -107,8 +110,8 @@ int main(int argc, char **argv) {
     unsigned int wheel_encoder_ticks = g_wheel_encoder_ticks;
     unsigned int wheel_encoder_delta = wheel_encoder_ticks - last_wheel_encoder_ticks;
 
-    // Only update if moved
-    if (wheel_encoder_delta > 0) {
+    // Only update if moved or we haven't published in a bit
+    if (wheel_encoder_delta > 0 || (now - last_publish).toSec() > MIN_PUBLISH_RATE) {
       // Compute distance and angle change in radians
       float distance = WHEEL_ENCODER_M_DISTANCE_FROM_TICKS * float(wheel_encoder_delta);
       float yaw_delta = std::fmod(g_yaw - last_yaw, 2*PI);
@@ -140,6 +143,7 @@ int main(int argc, char **argv) {
       // Save loop variables
       last_wheel_encoder_ticks = wheel_encoder_ticks;
       last_yaw = g_yaw;
+      last_publish = now;
     }
 
     ros::spinOnce();

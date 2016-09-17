@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # license removed for brevity
 import json
+import time
 
 import rospy
 import geometry_msgs.msg
@@ -28,6 +29,7 @@ def publish_waypoint(topic, waypoint):
     msg.pose.position.y = waypoint['y']
     print("PUBLISHING: ", waypoint)
     topic.publish(msg)
+    time.sleep(1)
 
 
 def publish_course(topic, course):
@@ -61,7 +63,7 @@ def open_the_bay_doors():
     clear_waypoints()
     print("CLEARED WAYPOINTS")
     publish_course(position_topic, course)
-    print("PUBLISHING COURSE")
+    print("PUBLISHED COURSE")
     restart_waypoints()
     print("RESTARTED WAYPOINTS")
     set_initial_position(initial_position_topic)

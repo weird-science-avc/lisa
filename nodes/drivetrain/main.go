@@ -108,15 +108,15 @@ func main() {
 	}
 	defer robot.Stop()
 
-	// Subscribe to lisa/cmd_steering and lisa/cmd_velocity
+	// Subscribe to lisa/cmd_steering and lisa/cmd_speed
 	node.Logger().Info("subscribing to /lisa/cmd_steering")
 	node.NewSubscriber("/lisa/cmd_steering", std_msgs.MsgFloat64, func(msg *std_msgs.Float64) {
 		if err := steering.Steer(msg.Data); err != nil {
 			node.Logger().Error(err.Error())
 		}
 	})
-	node.Logger().Info("subscribing to /lisa/cmd_velocity")
-	node.NewSubscriber("/lisa/cmd_velocity", std_msgs.MsgFloat64, func(msg *std_msgs.Float64) {
+	node.Logger().Info("subscribing to /lisa/cmd_speed")
+	node.NewSubscriber("/lisa/cmd_speed", std_msgs.MsgFloat64, func(msg *std_msgs.Float64) {
 		if err := speed.Speed(msg.Data); err != nil {
 			node.Logger().Error(err.Error())
 		}

@@ -15,6 +15,10 @@
 #define LOW_SPEED 0.3 // 0=stopped, 1=max
 #define HIGH_SPEED 0.5 // 0=stopped, 1=max
 
+// This is the range over which we'll do variable steering; anything greater
+// than this will saturate at our maximum steering.
+#define VARIABLE_STEERING_RANGE 0.52359 // 30 degrees
+
 geometry_msgs::Pose g_pose, g_goal;
 bool g_started;
 
@@ -86,8 +90,10 @@ int main(int argc, char **argv)
       // Discrete speed
       speed = (d > APPROACH_DELTA) ?  HIGH_SPEED : LOW_SPEED;
 
-      // Continuous steering [-1.0, 1.0] unitless
-      steering = yaw_delta / PI;
+      // Continuous steering [-1.0, 1.0] within variable steering range
+      steering = yaw_delta / VARIABLE_STEERING_RANGE;
+      // If outside range, saturate to -1.0/1.0
+      steering = std::min(1.0, std::max(-1.0, steering));
     }
 
     // Publish if changed

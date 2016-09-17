@@ -60,7 +60,10 @@ func (e *ESCDriver) Connection() gobot.Connection { return e.connection.(gobot.C
 func (e *ESCDriver) Start() (errs []error) {
 	// On start write out speedDutyStopped to stop motor
 	log.Printf("speed: stopped => PwmDirectWrite(%d, %d) (%dus @ %0.1fHz)", int(speedPeriod), int(speedDutyStopped), int(speedDutyStopped/1e3), (1e9 / speedPeriod))
-	return []error{e.connection.PwmDirectWrite(e.Pin(), speedPeriod, speedDutyStopped)}
+	if err := e.connection.PwmDirectWrite(e.Pin(), speedPeriod, speedDutyStopped); err != nil {
+		return []error{err}
+	}
+	return nil
 }
 func (e *ESCDriver) Halt() (errs []error) { return }
 

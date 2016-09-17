@@ -12,8 +12,9 @@
 
 #define APPROACH_DELTA 1.0 // m
 
-#define LOW_SPEED 0.3 // 0=stopped, 1=max
-#define HIGH_SPEED 1.0 // 0=stopped, 1=max
+// 0=stopped, 1=max
+#define LOW_SPEED 0.3
+#define HIGH_SPEED 1.0
 
 // This is the range over which we'll do variable steering; anything greater
 // than this will saturate at our maximum steering.

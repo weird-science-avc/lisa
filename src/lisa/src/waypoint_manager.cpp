@@ -4,7 +4,7 @@
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/Marker.h>
 
-#define DEFAULT_TOLERANCE 3.0
+#define DEFAULT_TOLERANCE 1.0
 double g_tolerance = DEFAULT_TOLERANCE;
 
 ros::Publisher g_marker_pub;
